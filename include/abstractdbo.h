@@ -11,6 +11,7 @@ public:
 
     virtual QString getTableName() = 0;
     virtual void registerMemmber() = 0;
+
     DboRegister& getRegister();
 
 protected:

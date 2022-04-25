@@ -8,8 +8,11 @@ class DboRegister
 public:
 
     DboRegister(){};
-    DboRegister(const DboRegister&) = delete;
-    DboRegister& operator=(const DboRegister&) = delete;
+
+    DboRegister(const DboRegister&) {}
+    DboRegister& operator=(const DboRegister& regist) {
+        return *this;
+    }
 
     virtual ~DboRegister() {
         for(auto& iMemmber : m_listMemmber) {
@@ -30,7 +33,7 @@ public:
     }
 
     template<typename T>
-    void setValue(QString name, T value) {
+    void setValue(QString name, ColumnData value) {
         if(m_hashMemmber.contains(name))
             m_hashMemmber[name]->setValue(value);
     }

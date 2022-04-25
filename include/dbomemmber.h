@@ -42,10 +42,6 @@ public:
         m_columnInfo.colName = colName;
     }
 
-    T* getValue() const {
-        return m_value;
-    }
-
     virtual void setValue(ColumnData value) override {
         T forward = value;
         *m_value  = forward;

@@ -17,7 +17,7 @@ public:
         T obj;
         obj.registerMemmber();
         QString tableName = obj.getTableName();
-        DboRegister& regist  = obj.getRegister();
+        DboRegister& regist = obj.getRegister();
 
         if(m_fnConProvider)
             return DBHelper::createTable(tableName, regist, m_fnConProvider());
@@ -32,6 +32,22 @@ public:
 
         if(m_fnConProvider)
             return DBHelper::insert(tableName, regist, m_fnConProvider());
+        return DBCode::Failed;
+    }
+
+    DBCode insert(QVector<T>& listObj) {
+        if(listObj.empty())
+            return DBCode::OK;
+
+        QString tableName = listObj[0].getTableName();
+        QVector<DboRegister*> listRegists;
+        for(auto& iObj : listObj) {
+            iObj.registerMemmber();
+            listRegists.push_back(&iObj.getRegister());
+        }
+
+        if(m_fnConProvider)
+            return DBHelper::insert(tableName, listRegists, m_fnConProvider());
         return DBCode::Failed;
     }
 

@@ -3,7 +3,7 @@
 #include "dboregister.h"
 
 Q_GLOBAL_STATIC_WITH_ARGS(QString, templateCreateTable, ("CREATE TABLE IF NOT EXISTS %1(%2);"))
-Q_GLOBAL_STATIC_WITH_ARGS(QString, templateInsertTable, ("INSERT INTO %1(%2) VALUES(%3) RETURNING %4;"))
+Q_GLOBAL_STATIC_WITH_ARGS(QString, templateInsert, ("INSERT INTO %1(%2) VALUES %3 RETURNING %4;"))
 
 namespace DBHelper
 {
@@ -59,7 +59,7 @@ namespace DBHelper
         return DBHelper::execQuery(query, connection) == DBCode::OK;
     }
 
-    DBCode insert(const QString &tableName, const DboRegister &dboRegister, sqlite3 *connection)
+    DBCode insert(const QString& tableName, const DboRegister& dboRegister, sqlite3* connection)
     {
         if(!connection)
             return DBCode::Failed;
@@ -77,8 +77,9 @@ namespace DBHelper
         }
         listCols.chop(2);
         listBindCols.chop(2);
+        listBindCols = QString("(%1)").arg(listBindCols);
 
-        QByteArray query = templateInsertTable->arg(tableName, listCols, listBindCols, fieldID).toUtf8();
+        QByteArray query = templateInsert->arg(tableName, listCols, listBindCols, fieldID).toUtf8();
 
         sqlite3_stmt* stmt = nullptr;
         int rs = sqlite3_prepare_v2(connection, query, query.size(), &stmt, nullptr);
@@ -112,5 +113,81 @@ namespace DBHelper
         return DBCode::Failed;
     }
 
+    DBCode insert(const QString& tableName, const QVector<DboRegister*>& listDboRegister, sqlite3* connection)
+    {
+        if(!connection)
+            return DBCode::Failed;
+
+        if(listDboRegister.empty())
+            return DBCode::OK;
+
+        const auto& listMemmber = listDboRegister[0]->getListMemmber();
+        if(listMemmber.size() <= 1)
+            return DBCode::Failed;
+
+        QString fieldID = listMemmber[0]->getColName();
+        QString listCols = "";
+        QString listBindCols = "";
+        for(auto i = 1; i < listMemmber.size(); i++) {
+            listCols += QString("%1, ").arg(listMemmber[i]->getColName());
+            listBindCols += "?, ";
+        }
+        listCols.chop(2);
+        listBindCols.chop(2);
+        listBindCols = QString("(%1), ").arg(listBindCols);
+
+        QString listBindValue = "";
+        for(auto i = 0; i < listDboRegister.size(); i++) {
+            listBindValue += listBindCols;
+        }
+        listBindValue.chop(2);
+
+        QByteArray query = templateInsert->arg(tableName, listCols, listBindValue, fieldID).toUtf8();
+
+        sqlite3_stmt* stmt = nullptr;
+        int rs = sqlite3_prepare_v2(connection, query, query.size(), &stmt, nullptr);
+        if(rs != SQLITE_OK) {
+            return DBCode::PrepareFailed;
+        }
+
+        auto numMemmbers = listMemmber.size() - 1; //skip id field
+        for(auto iObj = 0; iObj < listDboRegister.size(); iObj++) {
+            const auto& members = listDboRegister[iObj]->getListMemmber();
+            for(auto iMemmber = 1; iMemmber < members.size(); iMemmber++) {
+                if(!members[iMemmber]->bindValue(stmt, iObj*numMemmbers + iMemmber)) {
+                    sqlite3_finalize(stmt);
+                    return DBCode::BindValueFailed;
+                }
+            }
+        }
+
+        int cntResultId = -1;
+        while (true) {
+            rs = sqlite3_step(stmt);
+            if(rs == SQLITE_ROW) {
+                int numCols = sqlite3_column_count(stmt);
+                if(numCols == 0) {
+                    sqlite3_finalize(stmt);
+                    return DBCode::CreateIdFailed;
+                }
+
+                if(++cntResultId < listDboRegister.size()) {
+                    ColumnData id(0, stmt);
+                    listDboRegister[cntResultId]->getListMemmber()[0]->setValue(id);
+                }
+            }
+            else if(rs == SQLITE_DONE) {
+                sqlite3_finalize(stmt);
+                if(cntResultId == listDboRegister.size() - 1)
+                    return DBCode::OK;
+                else
+                    return DBCode::Failed;
+            }
+            else {
+                sqlite3_finalize(stmt);
+                return DBCode::Failed;
+            }
+        }
+    }
 
 }
