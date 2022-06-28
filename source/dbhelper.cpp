@@ -5,6 +5,7 @@
 Q_GLOBAL_STATIC_WITH_ARGS(QString, templateCreateTable, ("CREATE TABLE IF NOT EXISTS %1(%2);"))
 Q_GLOBAL_STATIC_WITH_ARGS(QString, templateInsert, ("INSERT INTO %1(%2) VALUES %3 RETURNING %4;"))
 
+
 namespace DBHelper
 {
     bool stmtBindValue(sqlite3_stmt* stmt, qint32 idx, qint32 value)
@@ -190,4 +191,9 @@ namespace DBHelper
         }
     }
 
+//    template<typename T>
+//    Result<QVector<T>, DBCode> fetchByQuery(const QString& tableName, const QString& query, sqlite3* connection) {
+                
+        
+//    }
 }

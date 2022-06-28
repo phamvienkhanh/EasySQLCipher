@@ -32,20 +32,17 @@ public:
         }
     }
 
-    template<typename T>
     void setValue(QString name, ColumnData value) {
         if(m_hashMember.contains(name))
             m_hashMember[name]->setValue(value);
     }
 
-    template<typename T>
     bool bindValue(QString name, sqlite3_stmt* stmt) {
         if(m_hashMember.contains(name))
             return m_hashMember[name]->bindValue(stmt);
         return false;
     }
 
-    template<typename T>
     bool bindValue(QString name, sqlite3_stmt* stmt, qint32 idx) {
         if(m_hashMember.contains(name))
             return m_hashMember[name]->bindValue(stmt, idx);

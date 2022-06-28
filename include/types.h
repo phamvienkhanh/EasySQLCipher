@@ -15,10 +15,13 @@ enum class DBCode {
     OK,
     Failed,
 
+    Empty,
+    Busy,
+    Unknown,
+    
     PrepareFailed,
     BindValueFailed,
     CreateIdFailed,
-
 };
 
 template<typename T, typename R>

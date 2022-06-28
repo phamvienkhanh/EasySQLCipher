@@ -3,6 +3,7 @@
 
 #include "types.h"
 #include "abstractdbo.h"
+#include "dbhelpertemplate.h"
 
 template<typename T>
 class DbSet
@@ -63,19 +64,19 @@ public:
         return DBCode::Failed;
     }
 
-    Result<QVector<T>, DBCode> fetchByQuey(const QString& query) {
-        Result<QVector<T>, DBCode> rs;
-        return rs;
+    DBHelper::Query<T> query(QString query) {
+        return DBHelper::Query<T>{query, m_fnConProvider};
     }
 
     DBCode fetchById(T& obj) {
         return DBCode::Failed;
     }
 
+    
     void setFnConProvider(std::function<sqlite3* (void)> fn) {
         m_fnConProvider = fn;
     }
-
+    
 private:
     std::function<sqlite3* (void)> m_fnConProvider;
 };
