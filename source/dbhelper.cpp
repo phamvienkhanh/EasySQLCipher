@@ -42,7 +42,7 @@ namespace DBHelper
         if(!connection)
             return false;
 
-        const auto& listMemmber = dboRegister.getListMemmber();
+        const auto& listMemmber = dboRegister.getListMember();
         if(listMemmber.size() <= 1)
             return false;
 
@@ -64,7 +64,7 @@ namespace DBHelper
         if(!connection)
             return DBCode::Failed;
 
-        const auto& listMemmber = dboRegister.getListMemmber();
+        const auto& listMemmber = dboRegister.getListMember();
         if(listMemmber.size() <= 1)
             return DBCode::Failed;
 
@@ -121,7 +121,7 @@ namespace DBHelper
         if(listDboRegister.empty())
             return DBCode::OK;
 
-        const auto& listMemmber = listDboRegister[0]->getListMemmber();
+        const auto& listMemmber = listDboRegister[0]->getListMember();
         if(listMemmber.size() <= 1)
             return DBCode::Failed;
 
@@ -152,7 +152,7 @@ namespace DBHelper
 
         auto numMemmbers = listMemmber.size() - 1; //skip id field
         for(auto iObj = 0; iObj < listDboRegister.size(); iObj++) {
-            const auto& members = listDboRegister[iObj]->getListMemmber();
+            const auto& members = listDboRegister[iObj]->getListMember();
             for(auto iMemmber = 1; iMemmber < members.size(); iMemmber++) {
                 if(!members[iMemmber]->bindValue(stmt, iObj*numMemmbers + iMemmber)) {
                     sqlite3_finalize(stmt);
@@ -173,7 +173,7 @@ namespace DBHelper
 
                 if(++cntResultId < listDboRegister.size()) {
                     ColumnData id(0, stmt);
-                    listDboRegister[cntResultId]->getListMemmber()[0]->setValue(id);
+                    listDboRegister[cntResultId]->getListMember()[0]->setValue(id);
                 }
             }
             else if(rs == SQLITE_DONE) {

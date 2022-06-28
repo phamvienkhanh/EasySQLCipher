@@ -8,11 +8,11 @@ class User : public AbstractDBO
 public:
     User(){}
 
-    virtual QString getTableName() override {
+    QString getTableName() override {
         return "User";
     }
 
-    virtual void registerMemmber() override {
+    void registerMember() override {
         bind("id", "integer", &m_id);
         bind("name", "text", &m_name);
         bind("data", "BLOB", &m_data);
@@ -29,11 +29,11 @@ class Message : public AbstractDBO
 public:
     Message(){}
 
-    virtual QString getTableName() override {
+    QString getTableName() override {
         return "Message";
     }
 
-    virtual void registerMemmber() override {
+    void registerMember() override {
         bind("id", "integer", &m_id);
         bind("body", "text", &m_body);
         bind("md5", "BLOB", &m_md5);

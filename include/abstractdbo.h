@@ -10,7 +10,7 @@ public:
     ~AbstractDBO();
 
     virtual QString getTableName() = 0;
-    virtual void registerMemmber() = 0;
+    virtual void registerMember() = 0;
 
     DboRegister& getRegister();
 

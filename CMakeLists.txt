@@ -20,7 +20,7 @@ include_directories(
 set(HEADER include/easysqlcipher.h
            include/columndata.h
            include/precompiled.h
-           include/dbomemmber.h
+           include/dbomember.h
            include/dboregister.h
            include/abstractdbo.h
            include/dbhelper.h
@@ -30,7 +30,7 @@ set(HEADER include/easysqlcipher.h
 
 set(SOURCE source/easysqlcipher.cpp
            source/columndata.cpp
-           source/dbomemmber.cpp
+           source/dbomember.cpp
            source/abstractdbo.cpp
            source/dbhelper.cpp
            source/dbset.cpp

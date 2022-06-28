@@ -5,11 +5,11 @@
 #include "dbhelper.h"
 #include "types.h"
 
-class AbstractDboMemmber
+class AbstractDboMember
 {
 public:
-    AbstractDboMemmber(){}
-    virtual ~AbstractDboMemmber(){}
+    AbstractDboMember(){}
+    virtual ~AbstractDboMember(){}
 
 public:
     virtual void setValue(ColumnData) = 0;
@@ -33,25 +33,25 @@ protected:
 };
 
 template<typename T>
-class DboMemmber : public AbstractDboMemmber
+class DboMember : public AbstractDboMember
 {
 public:
-    DboMemmber(T* value, const QString& colName, const QString& sqlType) {
+    DboMember(T* value, const QString& colName, const QString& sqlType) {
         m_value = value;
         m_columnInfo.sqlType = sqlType;
         m_columnInfo.colName = colName;
     }
 
-    virtual void setValue(ColumnData value) override {
+    void setValue(ColumnData value) override {
         T forward = value;
         *m_value  = forward;
     }
 
-    virtual bool bindValue(sqlite3_stmt* stmt, qint32 idx) override {
+    bool bindValue(sqlite3_stmt* stmt, qint32 idx) override {
         return DBHelper::stmtBindValue(stmt, idx, *m_value);
     }
 
-    virtual bool bindValue(sqlite3_stmt* stmt) override {
+    bool bindValue(sqlite3_stmt* stmt) override {
         QString bindName = ":" + m_columnInfo.colName;
         int idx = sqlite3_bind_parameter_index(stmt, bindName.toUtf8());
         return DBHelper::stmtBindValue(stmt, idx, *m_value);

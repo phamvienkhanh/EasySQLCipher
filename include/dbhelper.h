@@ -18,6 +18,9 @@ namespace DBHelper
 
     DBCode insert(const QString& tableName, const DboRegister& dboRegister, sqlite3* connection);
     DBCode insert(const QString& tableName, const QVector<DboRegister*>& listDboRegister, sqlite3* connection);
+    
+    DBCode update(const QString& tableName, const DboRegister& dboRegister, sqlite3* connection);
+    DBCode update(const QString& tableName, const QVector<DboRegister*>& listDboRegister, sqlite3* connection);
 }
 
 #endif // DBHELPER_H

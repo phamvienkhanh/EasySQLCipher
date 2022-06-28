@@ -4,7 +4,7 @@ int main(int argc, char *argv[])
 {
     TestDB testDB;
     DBInitParam param;
-    param.dbPath = "/home/keith/programs/test.db";
+    param.dbPath = "./test.db";
     param.openMode = SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE | SQLITE_OPEN_FULLMUTEX;
     qDebug() << (qint32)testDB.init(param);
 
@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
     user.m_id = 0;
     user.m_data = QByteArray::fromRawData("testData", 8);
     user.m_name = "keithpham";
-    user.registerMemmber();
+    user.registerMember();
 
     User user2;
     user.m_id = 0;

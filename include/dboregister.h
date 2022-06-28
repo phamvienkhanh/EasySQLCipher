@@ -1,7 +1,7 @@
 #ifndef DBOREGISTER_H
 #define DBOREGISTER_H
 
-#include "dbomemmber.h"
+#include "dbomember.h"
 
 class DboRegister
 {
@@ -15,50 +15,50 @@ public:
     }
 
     virtual ~DboRegister() {
-        for(auto& iMemmber : m_listMemmber) {
-            delete iMemmber;
+        for(auto& iMember : m_listMember) {
+            delete iMember;
         }
 
-        m_hashMemmber.clear();
-        m_listMemmber.clear();
+        m_hashMember.clear();
+        m_listMember.clear();
     }
 
     template<typename T>
     void bind(QString name, QString sqlType, T* memmber) {
-        if(!m_hashMemmber.contains(name)) {
-            auto dboMemmber = new DboMemmber(memmber, name, sqlType);
-            m_hashMemmber.insert(name, dboMemmber);
-            m_listMemmber.push_back(dboMemmber);
+        if(!m_hashMember.contains(name)) {
+            auto dboMember = new DboMember(memmber, name, sqlType);
+            m_hashMember.insert(name, dboMember);
+            m_listMember.push_back(dboMember);
         }
     }
 
     template<typename T>
     void setValue(QString name, ColumnData value) {
-        if(m_hashMemmber.contains(name))
-            m_hashMemmber[name]->setValue(value);
+        if(m_hashMember.contains(name))
+            m_hashMember[name]->setValue(value);
     }
 
     template<typename T>
     bool bindValue(QString name, sqlite3_stmt* stmt) {
-        if(m_hashMemmber.contains(name))
-            return m_hashMemmber[name]->bindValue(stmt);
+        if(m_hashMember.contains(name))
+            return m_hashMember[name]->bindValue(stmt);
         return false;
     }
 
     template<typename T>
     bool bindValue(QString name, sqlite3_stmt* stmt, qint32 idx) {
-        if(m_hashMemmber.contains(name))
-            return m_hashMemmber[name]->bindValue(stmt, idx);
+        if(m_hashMember.contains(name))
+            return m_hashMember[name]->bindValue(stmt, idx);
         return false;
     }
 
-    const QVector<AbstractDboMemmber*>& getListMemmber() const {
-        return m_listMemmber;
+    const QVector<AbstractDboMember*>& getListMember() const {
+        return m_listMember;
     }
 
 private:
-    QHash<QString, AbstractDboMemmber*> m_hashMemmber;
-    QVector<AbstractDboMemmber*>        m_listMemmber;
+    QHash<QString, AbstractDboMember*> m_hashMember;
+    QVector<AbstractDboMember*>        m_listMember;
 };
 
 #endif // DBOREGISTER_H

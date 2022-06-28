@@ -15,7 +15,7 @@ public:
 public:
     bool createTable() {
         T obj;
-        obj.registerMemmber();
+        obj.registerMember();
         QString tableName = obj.getTableName();
         DboRegister& regist = obj.getRegister();
 
@@ -26,7 +26,7 @@ public:
     }
 
     DBCode insert(T& obj) {
-        obj.registerMemmber();
+        obj.registerMember();
         QString tableName = obj.getTableName();
         DboRegister& regist = obj.getRegister();
 
@@ -42,7 +42,7 @@ public:
         QString tableName = listObj[0].getTableName();
         QVector<DboRegister*> listRegists;
         for(auto& iObj : listObj) {
-            iObj.registerMemmber();
+            iObj.registerMember();
             listRegists.push_back(&iObj.getRegister());
         }
 
