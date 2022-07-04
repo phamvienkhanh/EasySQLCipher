@@ -21,6 +21,7 @@ public:
 
         m_hashMember.clear();
         m_listMember.clear();
+        m_hashRelationMember.clear();
     }
 
     template<typename T>
@@ -29,6 +30,25 @@ public:
             auto dboMember = new DboMember(memmber, name, sqlType);
             m_hashMember.insert(name, dboMember);
             m_listMember.push_back(dboMember);
+        }
+    }
+    
+    template<typename T>
+    void relation(QString relation, T* memmber) {
+        QString tableName = memmber->getTableName();
+        if(!m_hashRelationMember.contains(tableName)) {
+            auto dboRelationMember = new DboRelationMember(memmber, relation);
+            m_hashRelationMember.insert(tableName, dboRelationMember);
+        }
+    }
+    
+    template<typename T>
+    void relation(QString relation, QVector<T>* memmber) {
+        T obj;
+        QString tableName = obj.getTableName();
+        if(!m_hashRelationMember.contains(tableName)) {
+            auto dboRelationMember = new DboRelationMember(memmber, relation);
+            m_hashRelationMember.insert(tableName, dboRelationMember);
         }
     }
 
@@ -52,10 +72,20 @@ public:
     const QVector<AbstractDboMember*>& getListMember() const {
         return m_listMember;
     }
+    
+    QString getRelation(QString tableName) const {
+        if(m_hashRelationMember.contains(tableName)) {
+            return m_hashRelationMember[tableName]->getRelation();
+        }
+        
+        return "";
+    }
 
 private:
     QHash<QString, AbstractDboMember*> m_hashMember;
     QVector<AbstractDboMember*>        m_listMember;
+    
+    QHash<QString, AbstractDboRelationMember*> m_hashRelationMember;
 };
 
 #endif // DBOREGISTER_H

@@ -16,9 +16,20 @@ public:
 
 protected:
     template<typename T>
-    void bind(QString name, QString sqlType, T* value)
-    {
+    void bind(QString name, QString sqlType, T* value) {
         m_dboRegister.bind(name, sqlType, value);
+    }
+    
+    template<typename T>
+    void relation(QString relation, T* value) {
+        static_assert(std::is_base_of_v<AbstractDBO, T>, "Error: relation type must base on AbstractDBO");        
+        m_dboRegister.relation(relation, value);
+    }
+    
+    template<typename T>
+    void relation(QString relation, QVector<T>* value) {
+        static_assert(std::is_base_of_v<AbstractDBO, T>, "Error: relation type must base on AbstractDBO");
+        m_dboRegister.relation(relation, value);
     }
 
 protected:
