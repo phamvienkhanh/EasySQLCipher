@@ -6,6 +6,13 @@ ColumnData::ColumnData(const qint32& idx, sqlite3_stmt* stmt)
     m_stmt = stmt;
 }
 
+ColumnData::ColumnData(const qint32 &idx, const QString& colName, sqlite3_stmt *stmt)
+{
+    m_colIdx = idx;
+    m_stmt = stmt;
+    m_colName = colName;
+}
+
 ColumnData::operator qint32() const
 {
     return sqlite3_column_int(m_stmt, m_colIdx);

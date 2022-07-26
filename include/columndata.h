@@ -7,6 +7,7 @@ class ColumnData
 {
 public:
     ColumnData(const qint32& idx, sqlite3_stmt* stmt);
+    ColumnData(const qint32& idx, const QString& colName, sqlite3_stmt* stmt);
 
     operator qint32() const;
     operator QString() const;
@@ -14,6 +15,7 @@ public:
 
 private:
     qint32 m_colIdx;
+    QString m_colName;
     sqlite3_stmt* m_stmt;
 };
 

@@ -26,6 +26,7 @@ enum class DBCode {
     CreateIdFailed,
     
     RelationNotFound,
+    FieldIdNotFound,
 };
 
 template<typename T, typename R>

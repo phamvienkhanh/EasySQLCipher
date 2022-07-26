@@ -13,6 +13,28 @@
 namespace DBHelper
 {
 
+struct ProcessQueryStmtResult {
+    qint32 mainId = 0;
+    QMultiMap<QString, ColumnData> rowData; // <table name, columndata>
+};
+
+auto processQueryStmt(sqlite3_stmt* stmt, QString mainTableName) {
+    ProcessQueryStmtResult rs;
+    int nCol = sqlite3_column_count(stmt);
+    QString mainTableColId = QString("%1_id").arg(mainTableName);
+    for(int i = 0; i < nCol; i++) {
+        QString fullColName = QString(sqlite3_column_name(stmt, i));
+        auto colInfo = DBHelper::extractColName(fullColName);
+        ColumnData value(i, colInfo.second, stmt);
+        if(fullColName == mainTableColId) {
+            rs.mainId = value;
+        }
+        rs.rowData.insert(colInfo.first, value);
+    }
+
+    return rs;
+}
+
 template<typename T>
 Result<QVector<T>, DBCode> fetchByQueryWithRelation(FetchWithRelationParams& param) {
     Result<QVector<T>, DBCode> result;
@@ -33,7 +55,7 @@ Result<QVector<T>, DBCode> fetchByQueryWithRelation(FetchWithRelationParams& par
     QString joinClause = "";
     
     qint32 idxTable = 1;
-    param.query = param.query.replace("#1.", QString("%1.").arg(obj.getTableName()));
+    param.query = param.query.replace("#1.", QString("%1.").arg(param.tableName));
     QString selectClause = DBHelper::buildSelectClause<T>(param.colSelect, true) + ", ";
     QHashIterator<QString, QString> it(param.withTables);
     
@@ -65,23 +87,34 @@ Result<QVector<T>, DBCode> fetchByQueryWithRelation(FetchWithRelationParams& par
         return result;
     }
     
-    QVector<T> listData;
-    int rsStep = 0;
+    QHash<qint32, T> mapData;
+    int rsStep = 0;    
     while (1) {
         rsStep = sqlite3_step(stmt);
         switch (rsStep) {
         case SQLITE_ROW: {
-            int nCol = sqlite3_column_count(stmt);
+            auto stmtData = DBHelper::processQueryStmt(stmt, param.tableName);
+            if(stmtData.mainId == 0) {
+                sqlite3_finalize(stmt);
+                result.retCode = DBCode::FieldIdNotFound;
+                return result;
+            }
+
+            auto it = mapData.find(stmtData.mainId);
+            if(it != mapData.end()) {
+                T& obj = it.value();
+                obj.registerMember();
+                auto listColsData = stmtData.rowData.values(param.tableName);
+                auto* abstractDboRelation = obj.getRegister().getRelation(it.key());
+                if(abstractDboRelation == nullptr) {
+                    result.retCode = DBCode::RelationNotFound;
+                    return result;
+                }
+            }
+
             T data;
             data.registerMember();
-            for(int i = 0; i < nCol; i++) {
-                QString fullColName = QString(sqlite3_column_name(stmt, i));
-                auto colInfo = DBHelper::extractColName(fullColName);
-                ColumnData value(i, stmt);
-                data.getRegister().setValue(colInfo.second, value);
-            }
-            listData.push_back(data);
-            
+
             break;
         }
         case SQLITE_BUSY:
@@ -100,11 +133,11 @@ Result<QVector<T>, DBCode> fetchByQueryWithRelation(FetchWithRelationParams& par
         default:
             sqlite3_finalize(stmt);
             
-            if(listData.empty())
+            if(mapData.empty())
                 result.retCode = DBCode::Empty;
             else
                 result.retCode = DBCode::OK;
-            result.value = listData;
+            result.value = mapData;
             return result;
         }
     }
