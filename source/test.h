@@ -13,7 +13,8 @@ public:
     }
 
     void registerMember() override {
-        bind("id", "integer", &m_id);
+        AbstractDBO::registerMember();
+        
         bind("body", "text", &m_body);
         bind("md5", "BLOB", &m_md5);
         bind("identity", "text", &m_identity);
@@ -21,12 +22,13 @@ public:
     }
 
 public:
-    qint32      m_id;
     QString     m_body;
     QByteArray  m_md5;
     QString     m_identity;
     QString     m_author;
 };
+
+class Email;
 
 class User : public AbstractDBO
 {
@@ -38,22 +40,49 @@ public:
     }
 
     void registerMember() override {
-        bind("id", "integer", &m_id);
+        AbstractDBO::registerMember();
+        
         bind("sip_id", "text", &m_sip_id);
         bind("name", "text", &m_name);
         bind("data", "BLOB", &m_data);
         
-        relation("sip_id=author", &m_messages);
+        relation("sip_id=author", &m_messages, getTableName());
+        relation("sip_id=sip_id", &m_emails, getTableName());
     }
 
 public:
-    qint32  m_id;
     QString m_name;
     QString m_sip_id;
     QByteArray m_data;
     
     QVector<Message> m_messages;
-    Message mesg;
+    QVector<Email>   m_emails;
+    
+};
+
+class Email : public AbstractDBO
+{
+public:
+    Email(){}
+
+    QString getTableName() override {
+        return "Email";
+    }
+
+    void registerMember() override {
+        AbstractDBO::registerMember();
+        
+        bind("sip_id", "text", &m_sip_id);
+        bind("address", "text", &m_address);
+        
+        relation("sip_id=sip_id", &m_user, getTableName());
+    }
+
+public:
+    QString m_address;
+    QString m_sip_id;
+    
+    User m_user;
 };
 
 class TestDB : public EasySQLCipher
@@ -66,10 +95,12 @@ public:
 
         users.setFnConProvider(getConnection);
         messages.setFnConProvider(getConnection);
+        emails.setFnConProvider(getConnection);
     }
 
     DbSet<User>    users;
     DbSet<Message> messages;
+    DbSet<Email>   emails;
 };
 
 #endif // TEST_H

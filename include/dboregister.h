@@ -2,6 +2,7 @@
 #define DBOREGISTER_H
 
 #include "dbomember.h"
+#include "dborelationmember.h"
 
 class DboRegister
 {
@@ -34,20 +35,20 @@ public:
     }
     
     template<typename T>
-    void relation(QString relation, T* memmber) {
+    void relation(QString relationOn, T* memmber, const QString& tableLeft) {
         QString tableName = memmber->getTableName();
         if(!m_hashRelationMember.contains(tableName)) {
-            auto dboRelationMember = new DboRelationMember(memmber, relation);
+            auto dboRelationMember = new DboRelationMember(memmber, relationOn, tableLeft);
             m_hashRelationMember.insert(tableName, dboRelationMember);
         }
     }
     
     template<typename T>
-    void relation(QString relation, QVector<T>* memmber) {
+    void relation(QString relationOn, QVector<T>* memmber, const QString& tableLeft) {
         T obj;
         QString tableName = obj.getTableName();
         if(!m_hashRelationMember.contains(tableName)) {
-            auto dboRelationMember = new DboRelationMember(memmber, relation);
+            auto dboRelationMember = new DboRelationMember(memmber, relationOn, tableLeft);
             m_hashRelationMember.insert(tableName, dboRelationMember);
         }
     }
@@ -73,12 +74,12 @@ public:
         return m_listMember;
     }
     
-    QString getRelation(QString tableName) const {
+    AbstractDboRelationMember* getRelation(QString tableName) const {
         if(m_hashRelationMember.contains(tableName)) {
-            return m_hashRelationMember[tableName]->getRelation();
+            return m_hashRelationMember[tableName];
         }
         
-        return "";
+        return nullptr;
     }
 
 private:

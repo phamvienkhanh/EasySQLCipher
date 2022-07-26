@@ -8,5 +8,6 @@
 #include <QVector>
 #include <QVariant>
 #include <QStringList>
+#include <QHashIterator>
 
 #endif // PRECOMPILED_H

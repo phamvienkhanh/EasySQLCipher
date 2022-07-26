@@ -24,9 +24,22 @@ namespace DBHelper
         return sqlite3_bind_blob(stmt, idx, value, value.size(), SQLITE_TRANSIENT) == SQLITE_OK;
     }
 
+    QPair<QString, QString> extractColName(QString fullColName)
+    {
+        auto idxSep = fullColName.indexOf('_');
+        if(idxSep <= 0) {
+            return {};
+        }
+        
+        QPair<QString, QString> rs{};
+        rs.first = fullColName.first(idxSep);
+        rs.second = fullColName.right(fullColName.size() - idxSep - 1);
+        
+        return rs;
+    }
+    
     DBCode execQuery(const QString& query, sqlite3* connection)
     {
-        qDebug() << query;
         char* mesgError = nullptr;
         int rs = sqlite3_exec(connection, query.toUtf8(), nullptr, nullptr, &mesgError);
         if(rs != SQLITE_OK && mesgError != nullptr) {

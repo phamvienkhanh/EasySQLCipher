@@ -10,27 +10,33 @@ public:
     ~AbstractDBO();
 
     virtual QString getTableName() = 0;
-    virtual void registerMember() = 0;
+    
+    virtual void registerMember() {
+        m_dboRegister.bind("id", "integer", &m_id);
+    }
 
     DboRegister& getRegister();
 
 protected:
     template<typename T>
-    void bind(QString name, QString sqlType, T* value) {
+    void bind(const QString& name, QString sqlType, T* value) {
         m_dboRegister.bind(name, sqlType, value);
     }
     
     template<typename T>
-    void relation(QString relation, T* value) {
+    void relation(const QString& relation, T* value, const QString& tableLeft) {
         static_assert(std::is_base_of_v<AbstractDBO, T>, "Error: relation type must base on AbstractDBO");        
-        m_dboRegister.relation(relation, value);
+        m_dboRegister.relation(relation, value, tableLeft);
     }
     
     template<typename T>
-    void relation(QString relation, QVector<T>* value) {
+    void relation(const QString& relation, QVector<T>* value, const QString& tableLeft) {
         static_assert(std::is_base_of_v<AbstractDBO, T>, "Error: relation type must base on AbstractDBO");
-        m_dboRegister.relation(relation, value);
+        m_dboRegister.relation(relation, value, tableLeft);
     }
+    
+public:
+    qint32 m_id;
 
 protected:
     DboRegister m_dboRegister;

@@ -11,22 +11,23 @@ int main(int argc, char *argv[])
 
     testDB.users.createTable();
     testDB.messages.createTable();
+    testDB.emails.createTable();
 
     QVector<User> listUser;
     QVector<Message> listUser2;
 
-    User user;
-    user.m_id = 0;
-    user.m_data = QByteArray::fromRawData("testData", 8);
-    user.m_name = "keithpham";
-    user.registerMember();
+//    User user;
+//    user.m_id = 0;
+//    user.m_data = QByteArray::fromRawData("testData", 8);
+//    user.m_name = "keithpham";
+//    user.registerMember();
 
-    User user2;
-    user.m_id = 0;
-    user.m_data = QByteArray::fromRawData("testData", 8);
-    user.m_name = "keithpham";
+//    User user2;
+//    user.m_id = 0;
+//    user.m_data = QByteArray::fromRawData("testData", 8);
+//    user.m_name = "keithpham";
 
-    user2 = user;
+//    user2 = user;
 
 //    for(auto i = 0; i < 20; i++) {
 //        User user;
@@ -51,18 +52,21 @@ int main(int argc, char *argv[])
 //    testDB.messages.insert(listUser2);
 
     auto result = testDB.users
-                  .query("where Message.id > 7")                  
-                  .with<Message>()
+                  .query("where #1.id > 1")                  
+                  .with<Message>("*")
+                  .with<Email>("*")
                   .select("*");
     
-    if(result.retCode == DBCode::OK) {
-        for(auto& usr : result.value) {
-            qDebug() << usr.m_id;
-            qDebug() << usr.m_data;
-            qDebug() << usr.m_name;
-            qDebug() << " ================== ";
-        }
-    }
+    testDB.users.query("where id = 3").select("sip_id, alias");
+    
+//    if(result.retCode == DBCode::OK) {
+//        for(auto& usr : result.value) {
+//            qDebug() << usr.m_id;
+//            qDebug() << usr.m_data;
+//            qDebug() << usr.m_name;
+//            qDebug() << " ================== ";
+//        }
+//    }
     
             
     testDB.close();

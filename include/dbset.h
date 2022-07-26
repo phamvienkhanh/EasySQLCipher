@@ -3,7 +3,7 @@
 
 #include "types.h"
 #include "abstractdbo.h"
-#include "dbhelpertemplate.h"
+#include "dbhelper_query.h"
 
 template<typename T>
 class DbSet

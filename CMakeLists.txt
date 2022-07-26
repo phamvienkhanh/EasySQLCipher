@@ -14,6 +14,7 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core)
 
 include_directories(
     include
+    inl
     vendors/sqlcipher/dist/include
 )
 
@@ -21,12 +22,19 @@ set(HEADER include/easysqlcipher.h
            include/columndata.h
            include/precompiled.h
            include/dbomember.h
+           include/dborelationmember.h
            include/dboregister.h
            include/abstractdbo.h
            include/dbhelper.h
+           include/dbhelper_query.h
            include/dbset.h
-           include/types.h   
-           include/dbhelpertemplate.h
+           include/types.h
+           include/sqltemplate.h
+)
+
+set(INL inl/dbhelper_fetchbyquery.inl
+        inl/dbhelper_fetchbyquery_withrelation.inl
+        inl/dbhelper_clausebuilder.inl
 )
 
 set(SOURCE source/easysqlcipher.cpp
@@ -38,10 +46,10 @@ set(SOURCE source/easysqlcipher.cpp
 )
 
 add_library(EasySQLCipher STATIC
-  ${SOURCE} ${HEADER}
+  ${SOURCE} ${INL} ${HEADER}
 )
 
-link_directories(vendors/sqlcipher/dist/lib)
+#link_directories(vendors/sqlcipher/dist/lib)
 
 target_precompile_headers(EasySQLCipher PUBLIC include/precompiled.h)
 
