@@ -10,12 +10,10 @@ public:
     ~AbstractDBO();
 
     virtual QString getTableName() = 0;
+    virtual void registerMember();
     
-    virtual void registerMember() {
-        m_dboRegister.bind("id", "integer", &m_id);
-    }
-
     DboRegister& getRegister();
+    qint32 getId() {return m_id;}
 
 protected:
     template<typename T>

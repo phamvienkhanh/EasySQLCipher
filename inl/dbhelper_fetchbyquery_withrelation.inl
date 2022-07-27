@@ -3,8 +3,7 @@
 
 #include <sqlcipher/sqlite3.h>
 
-#include "dbhelper.h"
-#include "dbhelper_clausebuilder.inl"
+#include "dbhelper_decl.h"
 #include "types.h"
 #include "columndata.h"
 #include "sqltemplate.h"
@@ -12,28 +11,6 @@
 
 namespace DBHelper
 {
-
-struct ProcessQueryStmtResult {
-    qint32 mainId = 0;
-    QMultiMap<QString, ColumnData> rowData; // <table name, columndata>
-};
-
-auto processQueryStmt(sqlite3_stmt* stmt, QString mainTableName) {
-    ProcessQueryStmtResult rs;
-    int nCol = sqlite3_column_count(stmt);
-    QString mainTableColId = QString("%1_id").arg(mainTableName);
-    for(int i = 0; i < nCol; i++) {
-        QString fullColName = QString(sqlite3_column_name(stmt, i));
-        auto colInfo = DBHelper::extractColName(fullColName);
-        ColumnData value(i, colInfo.second, stmt);
-        if(fullColName == mainTableColId) {
-            rs.mainId = value;
-        }
-        rs.rowData.insert(colInfo.first, value);
-    }
-
-    return rs;
-}
 
 template<typename T>
 Result<QVector<T>, DBCode> fetchByQueryWithRelation(FetchWithRelationParams& param) {
@@ -99,21 +76,54 @@ Result<QVector<T>, DBCode> fetchByQueryWithRelation(FetchWithRelationParams& par
                 result.retCode = DBCode::FieldIdNotFound;
                 return result;
             }
+            
+            auto procData = [&](T& obj, bool isOnlyRelationData) -> bool {
+                auto tables = stmtData.rowData.uniqueKeys();
+                for(auto& iTable : tables) {
+                    auto colsData = stmtData.rowData.values(iTable);
+                    
+                    if(iTable == param.tableName) {
+                        if(isOnlyRelationData) {
+                            continue;
+                        }
+                        else {
+                            obj.getRegister().setValue(colsData);
+                            continue;
+                        }
+                    }
+                    
+                    auto* abstractDboRelation = obj.getRegister().getRelation(iTable);
+                    if(abstractDboRelation == nullptr) {                        
+                        return false;
+                    }
+                    
+                    abstractDboRelation->setValue(colsData);
+                }
+                
+                return true;
+            };
 
             auto it = mapData.find(stmtData.mainId);
             if(it != mapData.end()) {
                 T& obj = it.value();
                 obj.registerMember();
-                auto listColsData = stmtData.rowData.values(param.tableName);
-                auto* abstractDboRelation = obj.getRegister().getRelation(it.key());
-                if(abstractDboRelation == nullptr) {
+                
+                if(!procData(obj, true)) {
+                    sqlite3_finalize(stmt);
+                    result.retCode = DBCode::RelationNotFound;
+                    return result;
+                }                
+            }
+            else {
+                T obj;
+                obj.registerMember();
+                if(!procData(obj, false)) {
+                    sqlite3_finalize(stmt);
                     result.retCode = DBCode::RelationNotFound;
                     return result;
                 }
+                mapData.insert(stmtData.mainId, obj);
             }
-
-            T data;
-            data.registerMember();
 
             break;
         }
@@ -137,14 +147,12 @@ Result<QVector<T>, DBCode> fetchByQueryWithRelation(FetchWithRelationParams& par
                 result.retCode = DBCode::Empty;
             else
                 result.retCode = DBCode::OK;
-            result.value = mapData;
+            result.value = mapData.values().toVector();
             return result;
         }
     }
     
     return result;
-    
-    return Result<QVector<T>, DBCode>{};
 }
 }
 

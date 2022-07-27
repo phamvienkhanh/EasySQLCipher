@@ -57,6 +57,13 @@ public:
         if(m_hashMember.contains(name))
             m_hashMember[name]->setValue(value);
     }
+    
+    void setValue(QList<ColumnData> values) {
+        for(auto& iValue : values) {
+            if(m_hashMember.contains(iValue.getColName()))
+                m_hashMember[iValue.getColName()]->setValue(iValue);            
+        }
+    }
 
     bool bindValue(QString name, sqlite3_stmt* stmt) {
         if(m_hashMember.contains(name))

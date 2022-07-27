@@ -12,6 +12,10 @@ public:
     operator qint32() const;
     operator QString() const;
     operator QByteArray() const;
+    
+    QString getColName() const {
+        return m_colName;
+    }
 
 private:
     qint32 m_colIdx;

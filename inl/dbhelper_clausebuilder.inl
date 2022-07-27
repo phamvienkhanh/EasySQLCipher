@@ -35,13 +35,26 @@ QString buildSelectClause(QString cols, bool prefixTableName /*= false*/) {
     obj.registerMember();        
     QString tableName = obj.getTableName();
     QStringList listColsSelect = cols.split(",");
+    bool hasIdField = false;
     for(auto& iCol : listColsSelect) {
+        QString colName = iCol.trimmed();
+        if(colName == "id") {
+            hasIdField = true;
+        }
+        
         if(prefixTableName)
-            rsStr += QString("%1.%2 as %1_%2, ").arg(tableName, iCol.trimmed());
+            rsStr += QString("%1.%2 as %1_%2, ").arg(tableName, colName);
         else
-            rsStr += QString("%1.%2, ").arg(tableName, iCol.trimmed());
+            rsStr += QString("%1.%2, ").arg(tableName, colName);
     }
     rsStr.chop(2);
+    
+    if(!hasIdField) {
+        if(prefixTableName)
+            rsStr = QString("%1.id as %1_id, ").arg(tableName) + rsStr;
+        else
+            rsStr = QString("%1.id, ").arg(tableName) + rsStr;
+    }
     
     return rsStr;
 }

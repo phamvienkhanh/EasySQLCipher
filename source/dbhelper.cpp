@@ -36,6 +36,23 @@ namespace DBHelper
         rs.second = fullColName.right(fullColName.size() - idxSep - 1);
         
         return rs;
+    }        
+    
+    ProcessQueryStmtResult processQueryStmt(sqlite3_stmt* stmt, QString mainTableName) {
+        ProcessQueryStmtResult rs;
+        int nCol = sqlite3_column_count(stmt);
+        QString mainTableColId = QString("%1_id").arg(mainTableName);
+        for(int i = 0; i < nCol; i++) {
+            QString fullColName = QString(sqlite3_column_name(stmt, i));
+            auto colInfo = DBHelper::extractColName(fullColName);
+            ColumnData value(i, colInfo.second, stmt);
+            if(fullColName == mainTableColId) {
+                rs.mainId = value;
+            }
+            rs.rowData.insert(colInfo.first, value);
+        }
+    
+        return rs;
     }
     
     DBCode execQuery(const QString& query, sqlite3* connection)
@@ -204,9 +221,4 @@ namespace DBHelper
         }
     }
 
-//    template<typename T>
-//    Result<QVector<T>, DBCode> fetchByQuery(const QString& tableName, const QString& query, sqlite3* connection) {
-                
-        
-//    }
 }

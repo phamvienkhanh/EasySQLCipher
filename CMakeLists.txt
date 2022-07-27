@@ -26,6 +26,7 @@ set(HEADER include/easysqlcipher.h
            include/dboregister.h
            include/abstractdbo.h
            include/dbhelper.h
+           include/dbhelper_decl.h
            include/dbhelper_query.h
            include/dbset.h
            include/types.h

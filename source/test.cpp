@@ -52,10 +52,10 @@ int main(int argc, char *argv[])
 //    testDB.messages.insert(listUser2);
 
     auto result = testDB.users
-                  .query("where #1.id > 1")                  
-                  .with<Message>("*")
-                  .with<Email>("*")
-                  .select("*");
+                  .query("where #1.id = 1")                  
+                  .with<Message>("body")
+                  .with<Email>("address")
+                  .select("id, name");
     
     testDB.users.query("where id = 3").select("sip_id, alias");
     
