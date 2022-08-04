@@ -59,20 +59,33 @@ public:
     DBCode save(T& obj) {
         return DBCode::Failed;
     }
+    
+    DBCode remove(const QString& query) {
+        T obj;
+        return DBHelper::remove(obj.getTableName(), query, m_fnConProvider());
+    }
 
     DBCode remove(T& obj) {
-        return DBCode::Failed;
+        QString whereClause = QString("WHERE id = %1").arg(obj.getId());
+        return DBHelper::remove(obj.getTableName(), whereClause, m_fnConProvider());
     }
-
-    DBHelper::Query<T> query(QString query) {
-        return DBHelper::Query<T>{query, m_fnConProvider};
-    }
-
-    DBCode fetchById(T& obj) {
-        return DBCode::Failed;
-    }
-
     
+    DBCode remove(QVector<T>& objs) {
+        QString strListIds = "";
+        for(auto& iObj : objs) {
+            strListIds += QString("%1, ").arg(iObj.getId());
+        }
+        strListIds.chop(2);
+        
+        QString whereClause = QString("WHERE id IN (%1)").arg(strListIds);
+        T obj;
+        return DBHelper::remove(obj.getTableName(), whereClause, m_fnConProvider());
+    }
+
+    DBHelper::Query<T> query(const QString& query) {
+        return std::move(DBHelper::Query<T>{query, m_fnConProvider});
+    }
+
     void setFnConProvider(std::function<sqlite3* (void)> fn) {
         m_fnConProvider = fn;
     }

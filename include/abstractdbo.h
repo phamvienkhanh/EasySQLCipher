@@ -34,7 +34,7 @@ protected:
     }
     
 public:
-    qint32 m_id;
+    qint32 m_id = 0;
 
 protected:
     DboRegister m_dboRegister;

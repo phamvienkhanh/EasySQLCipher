@@ -13,7 +13,7 @@ namespace DBHelper
 template<typename T>
 class Query {
 public:
-    Result<QVector<T>, DBCode> select(QString colSelect) {
+    Result<QVector<T>, DBCode> select(const QString& colSelect) {
         Result<QVector<T>, DBCode> rs;
         T obj;
         QString tableName = obj.getTableName();
@@ -38,7 +38,7 @@ public:
     }
     
     template<typename R>
-    Query<T>& with(QString selectCols) {
+    Query<T>& with(const QString& selectCols) {
         R objJoin;
         if(!m_withTables.contains(objJoin.getTableName())) {
             m_withTables.insert(objJoin.getTableName(), selectCols);
@@ -47,7 +47,7 @@ public:
         return *this;
     } 
     
-    Query(QString query, std::function<sqlite3* (void)> fnCon) {
+    Query(const QString& query, std::function<sqlite3* (void)> fnCon) {
         m_query = query;
         m_fnConProvider = fnCon;
     }

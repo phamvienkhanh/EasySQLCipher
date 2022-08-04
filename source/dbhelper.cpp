@@ -2,10 +2,6 @@
 
 #include "dboregister.h"
 
-Q_GLOBAL_STATIC_WITH_ARGS(QString, templateCreateTable, ("CREATE TABLE IF NOT EXISTS %1(%2);"))
-Q_GLOBAL_STATIC_WITH_ARGS(QString, templateInsert, ("INSERT INTO %1(%2) VALUES %3 RETURNING %4;"))
-
-
 namespace DBHelper
 {
     bool stmtBindValue(sqlite3_stmt* stmt, qint32 idx, qint32 value)
@@ -24,7 +20,7 @@ namespace DBHelper
         return sqlite3_bind_blob(stmt, idx, value, value.size(), SQLITE_TRANSIENT) == SQLITE_OK;
     }
 
-    QPair<QString, QString> extractColName(QString fullColName)
+    QPair<QString, QString> extractColName(const QString& fullColName)
     {
         auto idxSep = fullColName.indexOf('_');
         if(idxSep <= 0) {
@@ -38,7 +34,7 @@ namespace DBHelper
         return rs;
     }        
     
-    ProcessQueryStmtResult processQueryStmt(sqlite3_stmt* stmt, QString mainTableName) {
+    ProcessQueryStmtResult processQueryStmt(sqlite3_stmt* stmt, const QString& mainTableName) {
         ProcessQueryStmtResult rs;
         int nCol = sqlite3_column_count(stmt);
         QString mainTableColId = QString("%1_id").arg(mainTableName);
@@ -221,4 +217,10 @@ namespace DBHelper
         }
     }
 
+    DBCode remove(const QString& tableName, const QString& query, sqlite3* connection)
+    {
+        QString deleteQuery = templateDelete->arg(tableName, query);
+        return DBHelper::execQuery(deleteQuery, connection); 
+    }
+    
 }

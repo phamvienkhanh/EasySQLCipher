@@ -11,9 +11,9 @@ public:
     virtual ~AbstractDboRelationMember(){}
     
     virtual QString getRelation() = 0;
-    virtual void    setValue(QList<ColumnData> listColsData) = 0;
+    virtual void    setValue(const QList<ColumnData>& listColsData) = 0;
     virtual QString buildSelectClause(bool prefixTableName = false) = 0;
-    virtual QString buildSelectClause(QString cols, bool prefixTableName = false) = 0;
+    virtual QString buildSelectClause(const QString& cols, bool prefixTableName = false) = 0;
     virtual QString buildJoinClause() = 0;
 };
 
@@ -21,13 +21,13 @@ template<typename T>
 class DboRelationMember : public AbstractDboRelationMember
 {
 public:
-    DboRelationMember(T* value, const QString& relationOn, const QString tableLeft) {             
+    DboRelationMember(T* value, const QString& relationOn, const QString& tableLeft) {             
         m_value = value;
         m_listValues = nullptr;
         m_relationOn = relationOn;
         m_tableLeft = tableLeft;
     }
-    DboRelationMember(QVector<T>* listVals, const QString& relationOn, const QString tableLeft) {
+    DboRelationMember(QVector<T>* listVals, const QString& relationOn, const QString& tableLeft) {
         m_listValues = listVals;
         m_value = nullptr;
         m_relationOn = relationOn;
@@ -38,7 +38,7 @@ public:
         return m_relationOn;
     }
     
-    void setValue(QList<ColumnData> listColsData) override {
+    void setValue(const QList<ColumnData>& listColsData) override {
         if(m_value) {
             m_value->registerMember();
             for(auto& iColsData : listColsData) {
@@ -51,10 +51,13 @@ public:
             for(auto& iColsData : listColsData) {
                 obj.getRegister().setValue(iColsData.getColName(), iColsData);                
             }
+            
             qint32 id = obj.getId();
-            if(id != 0 && !m_idsAdded.contains(id)) {
-                m_idsAdded.insert(id, id);
-                m_listValues->push_back(obj);
+            if(id != 0) {
+                if(!m_idsAdded.contains(id)) {
+                    m_idsAdded.insert(id);                    
+                    m_listValues->push_back(obj);
+                }
             }
         }
     }
@@ -75,13 +78,13 @@ public:
         return DBHelper::buildSelectClause<T>(prefixTableName);
     }
     
-    QString buildSelectClause(QString cols, bool prefixTableName = false) override {
+    QString buildSelectClause(const QString& cols, bool prefixTableName = false) override {
         return DBHelper::buildSelectClause<T>(cols, prefixTableName);
     } 
 
 private:
     T* m_value;
-    QHash<qint32, qint32> m_idsAdded;
+    QSet<qint32> m_idsAdded;
     QVector<T>* m_listValues;
     QString m_relationOn;
     QString m_tableLeft;

@@ -19,6 +19,9 @@ public:
         for(auto& iMember : m_listMember) {
             delete iMember;
         }
+        for(auto& iRelationMember : m_hashRelationMember) {
+            delete iRelationMember;
+        }
 
         m_hashMember.clear();
         m_listMember.clear();
@@ -26,7 +29,7 @@ public:
     }
 
     template<typename T>
-    void bind(QString name, QString sqlType, T* memmber) {
+    void bind(const QString& name, const QString& sqlType, T* memmber) {
         if(!m_hashMember.contains(name)) {
             auto dboMember = new DboMember(memmber, name, sqlType);
             m_hashMember.insert(name, dboMember);
@@ -35,7 +38,7 @@ public:
     }
     
     template<typename T>
-    void relation(QString relationOn, T* memmber, const QString& tableLeft) {
+    void relation(const QString& relationOn, T* memmber, const QString& tableLeft) {
         QString tableName = memmber->getTableName();
         if(!m_hashRelationMember.contains(tableName)) {
             auto dboRelationMember = new DboRelationMember(memmber, relationOn, tableLeft);
@@ -44,7 +47,7 @@ public:
     }
     
     template<typename T>
-    void relation(QString relationOn, QVector<T>* memmber, const QString& tableLeft) {
+    void relation(const QString& relationOn, QVector<T>* memmber, const QString& tableLeft) {
         T obj;
         QString tableName = obj.getTableName();
         if(!m_hashRelationMember.contains(tableName)) {
@@ -53,25 +56,25 @@ public:
         }
     }
 
-    void setValue(QString name, ColumnData value) {
+    void setValue(const QString& name, ColumnData value) {
         if(m_hashMember.contains(name))
             m_hashMember[name]->setValue(value);
     }
     
-    void setValue(QList<ColumnData> values) {
+    void setValue(const QList<ColumnData>& values) {
         for(auto& iValue : values) {
             if(m_hashMember.contains(iValue.getColName()))
                 m_hashMember[iValue.getColName()]->setValue(iValue);            
         }
     }
 
-    bool bindValue(QString name, sqlite3_stmt* stmt) {
+    bool bindValue(const QString& name, sqlite3_stmt* stmt) {
         if(m_hashMember.contains(name))
             return m_hashMember[name]->bindValue(stmt);
         return false;
     }
 
-    bool bindValue(QString name, sqlite3_stmt* stmt, qint32 idx) {
+    bool bindValue(const QString& name, sqlite3_stmt* stmt, qint32 idx) {
         if(m_hashMember.contains(name))
             return m_hashMember[name]->bindValue(stmt, idx);
         return false;
@@ -81,7 +84,7 @@ public:
         return m_listMember;
     }
     
-    AbstractDboRelationMember* getRelation(QString tableName) const {
+    AbstractDboRelationMember* getRelation(const QString& tableName) const {
         if(m_hashRelationMember.contains(tableName)) {
             return m_hashRelationMember[tableName];
         }

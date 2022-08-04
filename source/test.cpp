@@ -15,6 +15,7 @@ int main(int argc, char *argv[])
 
     QVector<User> listUser;
     QVector<Message> listUser2;
+    int a;
 
 //    User user;
 //    user.m_id = 0;
@@ -52,12 +53,26 @@ int main(int argc, char *argv[])
 //    testDB.messages.insert(listUser2);
 
     auto result = testDB.users
-                  .query("where #1.id = 1")                  
+                  .query("where #1.id > 1")                  
                   .with<Message>("body")
                   .with<Email>("address")
                   .select("id, name");
     
-    testDB.users.query("where id = 3").select("sip_id, alias");
+    auto result2 = testDB.emails
+                  .query("where #1.id = 1")                  
+                  .with<User>("name")
+                  .select("*");
+    
+    auto result3 = testDB.users.query("where id = 3").select("sip_id, name");
+    
+    QVector<User> listUsers;
+    for(auto i = 3; i < 7; i++) {
+        User user;
+        user.m_id = i;
+        
+        listUsers.push_back(user);        
+    }
+    auto result4 = testDB.users.remove(listUsers);
     
 //    if(result.retCode == DBCode::OK) {
 //        for(auto& usr : result.value) {

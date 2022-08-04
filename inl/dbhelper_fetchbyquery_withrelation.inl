@@ -22,25 +22,19 @@ Result<QVector<T>, DBCode> fetchByQueryWithRelation(FetchWithRelationParams& par
         return result;
     }
     
-//    QString selects = "*";
-//    if(!param.colSelect.isEmpty()) {
-//        selects = param.colSelect;
-//    }
-    
-    T obj;
-    obj.registerMember();
-    QString joinClause = "";
-    
-    qint32 idxTable = 1;
+    QString joinClause = "";        
     param.query = param.query.replace("#1.", QString("%1.").arg(param.tableName));
     QString selectClause = DBHelper::buildSelectClause<T>(param.colSelect, true) + ", ";
-    QHashIterator<QString, QString> it(param.withTables);
     
+    qint32 idxTable = 1;
+    T objTemp;
+    objTemp.registerMember();
+    QHashIterator<QString, QString> it(param.withTables);
     while (it.hasNext()) {
         it.next();
         idxTable++;
         
-        auto* abstractDboRelation = obj.getRegister().getRelation(it.key());
+        auto* abstractDboRelation = objTemp.getRegister().getRelation(it.key());
         if(abstractDboRelation == nullptr) {
             result.retCode = DBCode::RelationNotFound;
             return result;
@@ -64,7 +58,17 @@ Result<QVector<T>, DBCode> fetchByQueryWithRelation(FetchWithRelationParams& par
         return result;
     }
     
-    QHash<qint32, T> mapData;
+    QHash<qint32, qint32> hashIndex; // <id, index>
+    QVector<T*> ptrResults;
+    auto freePtrResults = [&](){
+        for(auto& ptr : ptrResults) {
+            if(ptr) {
+                delete ptr;
+            }
+        }
+        ptrResults.clear();        
+    };
+            
     int rsStep = 0;    
     while (1) {
         rsStep = sqlite3_step(stmt);
@@ -73,11 +77,15 @@ Result<QVector<T>, DBCode> fetchByQueryWithRelation(FetchWithRelationParams& par
             auto stmtData = DBHelper::processQueryStmt(stmt, param.tableName);
             if(stmtData.mainId == 0) {
                 sqlite3_finalize(stmt);
+                freePtrResults();
                 result.retCode = DBCode::FieldIdNotFound;
                 return result;
             }
             
-            auto procData = [&](T& obj, bool isOnlyRelationData) -> bool {
+            auto procData = [&](T* obj, bool isOnlyRelationData) -> bool {
+                if(obj == nullptr)
+                    return false;
+                
                 auto tables = stmtData.rowData.uniqueKeys();
                 for(auto& iTable : tables) {
                     auto colsData = stmtData.rowData.values(iTable);
@@ -87,12 +95,12 @@ Result<QVector<T>, DBCode> fetchByQueryWithRelation(FetchWithRelationParams& par
                             continue;
                         }
                         else {
-                            obj.getRegister().setValue(colsData);
+                            obj->getRegister().setValue(colsData);
                             continue;
                         }
                     }
                     
-                    auto* abstractDboRelation = obj.getRegister().getRelation(iTable);
+                    auto* abstractDboRelation = obj->getRegister().getRelation(iTable);
                     if(abstractDboRelation == nullptr) {                        
                         return false;
                     }
@@ -103,32 +111,39 @@ Result<QVector<T>, DBCode> fetchByQueryWithRelation(FetchWithRelationParams& par
                 return true;
             };
 
-            auto it = mapData.find(stmtData.mainId);
-            if(it != mapData.end()) {
-                T& obj = it.value();
-                obj.registerMember();
-                
-                if(!procData(obj, true)) {
-                    sqlite3_finalize(stmt);
-                    result.retCode = DBCode::RelationNotFound;
-                    return result;
-                }                
+            auto it = hashIndex.find(stmtData.mainId);
+            if(it != hashIndex.end()) {
+                const qint32& idx = it.value();
+                if(idx < ptrResults.size()) {
+                    T* obj = ptrResults[idx];
+                    obj->registerMember();
+                    
+                    if(!procData(obj, true)) {
+                        sqlite3_finalize(stmt);
+                        freePtrResults();
+                        result.retCode = DBCode::RelationNotFound;
+                        return result;
+                    }
+                }                                
             }
             else {
-                T obj;
-                obj.registerMember();
+                T* obj = new T();
+                obj->registerMember();
                 if(!procData(obj, false)) {
                     sqlite3_finalize(stmt);
+                    freePtrResults();
                     result.retCode = DBCode::RelationNotFound;
                     return result;
                 }
-                mapData.insert(stmtData.mainId, obj);
+                ptrResults.push_back(obj);
+                hashIndex.insert(stmtData.mainId, ptrResults.size() - 1);
             }
 
             break;
         }
         case SQLITE_BUSY:
             sqlite3_finalize(stmt);
+            freePtrResults();
             result.retCode = DBCode::Busy;
             return result;
             
@@ -136,6 +151,7 @@ Result<QVector<T>, DBCode> fetchByQueryWithRelation(FetchWithRelationParams& par
         case SQLITE_CONSTRAINT:
         case SQLITE_ERROR:
             sqlite3_finalize(stmt);
+            freePtrResults();
             result.retCode = DBCode::Unknown;
             return result;
             
@@ -143,16 +159,25 @@ Result<QVector<T>, DBCode> fetchByQueryWithRelation(FetchWithRelationParams& par
         default:
             sqlite3_finalize(stmt);
             
-            if(mapData.empty())
+            if(ptrResults.empty())
                 result.retCode = DBCode::Empty;
-            else
+            else {
+                for(auto& iPtr : ptrResults) {
+                    if(iPtr) {
+                        result.value.push_back(*iPtr);
+                    }
+                }
+                
                 result.retCode = DBCode::OK;
-            result.value = mapData.values().toVector();
+            }
+                            
+            freePtrResults();
+            
             return result;
         }
     }
     
-    return result;
+//    return result;
 }
 }
 
