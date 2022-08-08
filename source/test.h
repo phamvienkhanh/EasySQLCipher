@@ -8,7 +8,7 @@ class Message : public AbstractDBO
 public:
     Message(){}
 
-    QString getTableName() override {
+    QString getTableName() const override {
         return "Message";
     }
 
@@ -35,7 +35,7 @@ class User : public AbstractDBO
 public:
     User(){}
 
-    QString getTableName() override {
+    QString getTableName() const override {
         return "User";
     }
 
@@ -65,7 +65,7 @@ class Email : public AbstractDBO
 public:
     Email(){}
 
-    QString getTableName() override {
+    QString getTableName() const override {
         return "Email";
     }
 

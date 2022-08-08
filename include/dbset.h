@@ -55,9 +55,18 @@ public:
     DBCode update(T& obj) {
         return DBCode::Failed;
     }
+    
+    DBCode update(QVector<T>& obj) {
+        return DBCode::Failed;
+    }
 
     DBCode save(T& obj) {
-        return DBCode::Failed;
+        qint32 id = obj.getId();
+        if(id == 0) {
+            return insert(obj);
+        }
+        
+        return update(obj);
     }
     
     DBCode remove(const QString& query) {
@@ -65,12 +74,12 @@ public:
         return DBHelper::remove(obj.getTableName(), query, m_fnConProvider());
     }
 
-    DBCode remove(T& obj) {
+    DBCode remove(const T& obj) {
         QString whereClause = QString("WHERE id = %1").arg(obj.getId());
         return DBHelper::remove(obj.getTableName(), whereClause, m_fnConProvider());
     }
     
-    DBCode remove(QVector<T>& objs) {
+    DBCode remove(const QVector<T>& objs) {
         QString strListIds = "";
         for(auto& iObj : objs) {
             strListIds += QString("%1, ").arg(iObj.getId());

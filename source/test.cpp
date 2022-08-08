@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
     QVector<Message> listUser2;
     int a;
 
-//    User user;
+    User user;
 //    user.m_id = 0;
 //    user.m_data = QByteArray::fromRawData("testData", 8);
 //    user.m_name = "keithpham";
@@ -49,8 +49,9 @@ int main(int argc, char *argv[])
 //    }
     
 
-//    testDB.users.insert(listUser);
-//    testDB.messages.insert(listUser2);
+    testDB.users.insert(user);
+    testDB.users.insert(listUser);
+    testDB.messages.insert(listUser2);
 
     auto result = testDB.users
                   .query("where #1.id > 1")                  

@@ -9,11 +9,11 @@ public:
     AbstractDBO();
     ~AbstractDBO();
 
-    virtual QString getTableName() = 0;
+    virtual QString getTableName() const = 0;
     virtual void registerMember();
     
     DboRegister& getRegister();
-    qint32 getId() {return m_id;}
+    qint32 getId() const {return m_id;}
 
 protected:
     template<typename T>
