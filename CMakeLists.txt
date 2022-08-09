@@ -9,6 +9,8 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+option(ENABLE_PRECOMPILED_HEADER OFF)
+
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core)
 
@@ -49,15 +51,18 @@ set(SOURCE source/easysqlcipher.cpp
 add_library(EasySQLCipher STATIC
   ${SOURCE} ${INL} ${HEADER}
 )
+link_directories(vendors/sqlcipher/dist/lib)
 
-#link_directories(vendors/sqlcipher/dist/lib)
-
-target_precompile_headers(EasySQLCipher PUBLIC include/precompiled.h)
+if(ENABLE_PRECOMPILED_HEADER)
+    add_definitions(-DENABLE_PRECOMPILED_HEADER)
+    target_precompile_headers(EasySQLCipher PUBLIC include/precompiled.h)
+endif()
 
 target_link_libraries(EasySQLCipher PRIVATE Qt${QT_VERSION_MAJOR}::Core sqlcipher)
-
 target_compile_definitions(EasySQLCipher PRIVATE EASYSQLCIPHER_LIBRARY)
 
 
+
+# for test
 add_executable(TestSource source/test.h source/test.cpp)
 target_link_libraries(TestSource EasySQLCipher Qt${QT_VERSION_MAJOR}::Core)

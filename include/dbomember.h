@@ -1,9 +1,9 @@
 #ifndef DBOMEMMBER_H
 #define DBOMEMMBER_H
 
+#include "types.h"
 #include "columndata.h"
 #include "dbhelper.h"
-#include "types.h"
 
 class AbstractDboMember
 {
@@ -13,8 +13,8 @@ public:
 
 public:
     virtual void setValue(ColumnData value) = 0;
-    virtual bool bindValue(sqlite3_stmt* stmt, qint32 idx) = 0;
-    virtual bool bindValue(sqlite3_stmt* stmt) = 0;
+    virtual bool bindValue(sqlite3_stmt* stmt, qint32 idx) const = 0;
+    virtual bool bindValue(sqlite3_stmt* stmt) const = 0;
 
     const QString& getColName() const {
         return m_columnInfo.colName;
@@ -47,11 +47,11 @@ public:
         *m_value  = forward;
     }
 
-    bool bindValue(sqlite3_stmt* stmt, qint32 idx) override {
+    bool bindValue(sqlite3_stmt* stmt, qint32 idx) const override {
         return DBHelper::stmtBindValue(stmt, idx, *m_value);
     }
 
-    bool bindValue(sqlite3_stmt* stmt) override {
+    bool bindValue(sqlite3_stmt* stmt) const override {
         QString bindName = ":" + m_columnInfo.colName;
         int idx = sqlite3_bind_parameter_index(stmt, bindName.toUtf8());
         return DBHelper::stmtBindValue(stmt, idx, *m_value);

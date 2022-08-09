@@ -217,6 +217,141 @@ namespace DBHelper
         }
     }
 
+    sqlite3_stmt* buildUpdateStmt(const QString& tableName, const QStringList& updateCols, const DboRegister* dboRegister,
+                                  sqlite3* connection)
+    {
+        QString setClause{""};
+        QString whereClause{"id = :id"};
+
+        if(updateCols.isEmpty()) {
+            const auto& listMemmber = dboRegister->getListMember();
+            if(listMemmber.size() <= 1)
+                return nullptr;
+
+            for(auto& iMember : listMemmber) {
+                const QString& colName = iMember->getColName();
+                if(colName == "id")
+                    continue;
+
+                setClause += QString("%1 = :%1, ").arg(colName);
+            }
+            setClause.chop(2);
+        }
+        else {
+            for(const auto& iCol : updateCols) {
+                if(iCol == "id")
+                    continue;
+
+                setClause += QString("%1 = :%1, ").arg(iCol);
+            }
+            setClause.chop(2);
+        }
+
+        QByteArray query = templateUpdate->arg(tableName, setClause, whereClause).toUtf8();
+        qDebug() << query;
+        sqlite3_stmt* stmt = nullptr;
+        int rs = sqlite3_prepare_v2(connection, query, query.size(), &stmt, nullptr);
+        if(rs != SQLITE_OK) {
+            return nullptr;
+        }
+
+        return stmt;
+    }
+
+    DBCode update(const QString& tableName, const DboRegister& dboRegister, const QStringList& updateCols,
+                  sqlite3* connection)
+    {
+        if(!connection)
+            return DBCode::Failed;
+
+        sqlite3_stmt* stmt = buildUpdateStmt(tableName, updateCols, &dboRegister, connection);
+        if(stmt == nullptr) {
+            return DBCode::Failed;
+        }
+
+        if(updateCols.isEmpty()) {
+            const auto& listMemmber = dboRegister.getListMember();
+            for(auto i = 0; i < listMemmber.size(); i++) {
+                if(!listMemmber[i]->bindValue(stmt)) {
+                    sqlite3_finalize(stmt);
+                    return DBCode::BindValueFailed;
+                }
+            }
+        }
+        else {
+            for(const auto& iCol : updateCols) {
+                if(!dboRegister.bindValue(iCol, stmt)) {
+                    sqlite3_finalize(stmt);
+                    return DBCode::BindValueFailed;
+                }
+            }
+            if(!dboRegister.bindValue("id", stmt)) {
+                sqlite3_finalize(stmt);
+                return DBCode::BindValueFailed;
+            }
+        }
+
+        int rs = sqlite3_step(stmt);
+        if(rs == SQLITE_ROW || rs == SQLITE_DONE) {
+            sqlite3_finalize(stmt);
+            return DBCode::OK;
+        }
+
+        sqlite3_finalize(stmt);
+        return DBCode::Failed;
+    }
+
+    DBCode update(const QString& tableName, const QVector<DboRegister*>& listDboRegister,
+                  const QStringList& updateCols, sqlite3* connection)
+    {
+        if(!connection)
+            return DBCode::Failed;
+
+        if(listDboRegister.isEmpty())
+            return DBCode::OK;
+
+        const DboRegister* dboRegister = listDboRegister.front();
+
+        sqlite3_stmt* stmt = buildUpdateStmt(tableName, updateCols, dboRegister, connection);
+
+        for(auto& iDboRegist : listDboRegister) {
+
+            sqlite3_reset(stmt);
+            sqlite3_clear_bindings(stmt);
+
+            if(updateCols.isEmpty()) {
+                const auto& listMemmber = iDboRegist->getListMember();
+                for(auto i = 0; i < listMemmber.size(); i++) {
+                    if(!listMemmber[i]->bindValue(stmt)) {
+                        sqlite3_finalize(stmt);
+                        return DBCode::BindValueFailed;
+                    }
+                }
+            }
+            else {
+                for(const auto& iCol : updateCols) {
+                    if(!iDboRegist->bindValue(iCol, stmt)) {
+                        sqlite3_finalize(stmt);
+                        return DBCode::BindValueFailed;
+                    }
+                }
+                if(!iDboRegist->bindValue("id", stmt)) {
+                    sqlite3_finalize(stmt);
+                    return DBCode::BindValueFailed;
+                }
+            }
+
+            int rs = sqlite3_step(stmt);
+            if(rs != SQLITE_ROW && rs != SQLITE_DONE) {
+                sqlite3_finalize(stmt);
+                return DBCode::Failed;
+            }
+        }
+
+        sqlite3_finalize(stmt);
+        return DBCode::OK;
+    }
+
     DBCode remove(const QString& tableName, const QString& query, sqlite3* connection)
     {
         QString deleteQuery = templateDelete->arg(tableName, query);

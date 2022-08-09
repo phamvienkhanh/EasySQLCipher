@@ -52,11 +52,37 @@ public:
         return DBCode::Failed;
     }
 
-    DBCode update(T& obj) {
+    DBCode update(T& obj, const QStringList& updateCols = {}) {
+        if(obj.getId() == 0)
+            return DBCode::Failed;
+
+        obj.registerMember();
+        QString tableName = obj.getTableName();
+        DboRegister& regist = obj.getRegister();
+
+        if(m_fnConProvider)
+            return DBHelper::update(tableName, regist, updateCols, m_fnConProvider());
+
         return DBCode::Failed;
     }
     
-    DBCode update(QVector<T>& obj) {
+    DBCode update(QVector<T>& listObj, const QStringList& updateCols = {}) {
+        if(listObj.empty())
+            return DBCode::OK;
+
+        QString tableName = listObj[0].getTableName();
+        QVector<DboRegister*> listRegists;
+        for(auto& iObj : listObj) {
+            if(iObj.getId() == 0)
+                return DBCode::Failed;
+
+            iObj.registerMember();
+            listRegists.push_back(&iObj.getRegister());
+        }
+
+        if(m_fnConProvider)
+            return DBHelper::update(tableName, listRegists, updateCols, m_fnConProvider());
+
         return DBCode::Failed;
     }
 

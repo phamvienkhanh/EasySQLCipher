@@ -4,7 +4,6 @@
 #include <sqlcipher/sqlite3.h>
 
 #include "types.h"
-#include "columndata.h"
 #include "dbhelper.h"
 
 namespace DBHelper
@@ -19,7 +18,7 @@ public:
         QString tableName = obj.getTableName();
         if(m_fnConProvider) {
             if(m_withTables.isEmpty()) {
-                return DBHelper::fetchByQuery<T>(tableName, m_query, colSelect, m_fnConProvider());                    
+                return DBHelper::fetchByQuery<T>(tableName, m_query, colSelect, m_fnConProvider());
             }
             else {
                 FetchWithRelationParams params;

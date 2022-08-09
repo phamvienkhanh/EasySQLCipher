@@ -1,6 +1,10 @@
 #ifndef COLUMNDATA_H
 #define COLUMNDATA_H
 
+#ifndef ENABLE_PRECOMPILED_HEADER
+#include "precompiled.h"
+#endif
+
 #include <sqlcipher/sqlite3.h>
 
 class ColumnData
@@ -13,7 +17,7 @@ public:
     operator QString() const;
     operator QByteArray() const;
     
-    QString getColName() const {
+    const QString& getColName() const {
         return m_colName;
     }
 

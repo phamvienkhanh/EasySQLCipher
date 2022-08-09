@@ -1,6 +1,10 @@
 #ifndef DBO_INC_TYPES_H
 #define DBO_INC_TYPES_H
 
+#ifndef ENABLE_PRECOMPILED_HEADER
+#include "precompiled.h"
+#endif
+
 #include <sqlcipher/sqlite3.h>
 
 struct DBInitParam {

@@ -68,13 +68,13 @@ public:
         }
     }
 
-    bool bindValue(const QString& name, sqlite3_stmt* stmt) {
+    bool bindValue(const QString& name, sqlite3_stmt* stmt) const {
         if(m_hashMember.contains(name))
             return m_hashMember[name]->bindValue(stmt);
         return false;
     }
 
-    bool bindValue(const QString& name, sqlite3_stmt* stmt, qint32 idx) {
+    bool bindValue(const QString& name, sqlite3_stmt* stmt, qint32 idx) const {
         if(m_hashMember.contains(name))
             return m_hashMember[name]->bindValue(stmt, idx);
         return false;
