@@ -14,6 +14,8 @@ public:
     DBCode init(const DBInitParam& param);
     void close();
 
+    sqlite3* getConnection() {return m_connection;}
+
 protected:
     sqlite3* m_connection = nullptr;
 };

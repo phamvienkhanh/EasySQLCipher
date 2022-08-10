@@ -231,6 +231,10 @@ int main(int argc, char *argv[])
 }
 ```  
 
+<br>
+<hr>
+<br>
+
 Chapter 2
 ---------
 
@@ -288,3 +292,144 @@ where User.id = 1;
   - Sau khi đã có dữ liệu gom nhóm theo từng bảng, duyệt dữ liệu để map dữ liệu vào DBO. Cần định nghĩa thêm các hàm **DboRelationMember::setValue(QList\<ColumnData> values)**, **DboRegister::setValue(QList\<ColumnData> values)**, để phục vụ việc chuyển dữ liệu. Bản chất relation member cũng là một DBO, và nó được khai báo với DboRegister nên khi có được danh sách ColumnData tướng ứng với DBO thì vào tìm nó rồi chuyển danh sách đó qua DboRelationMember. Tham chiếu đến member của DBO được giữ tại đây, công việc còn lại là xác định member tham chiếu là obj hay danh sách obj để map phù hợp.
   - lặp lại các bước trên cho đến khi kết thúc.
   - DboRelationMember sẽ chứa **QSet\<qint32\> m_idsAdded** với khóa là id để xác định obj có tồn tại trong danh sách chưa.
+
+<br>
+<hr>
+<br>
+
+Chapter 3
+---------
+
+Dựa trên các hàm và cơ chế ở trên, xây dựng tiếp function update cho DbSet.
+
+```cpp
+DBCode update(T& obj, const QStringList& updateCols = {});
+DBCode update(QVector<T>& listObj, const QStringList& updateCols = {});
+
+auto r = testDB.users.update(user);
+auto r = testDB.users.update(listUsers, {"name", "data"});
+...
+```  
+
+Hình dạng của nó như trên, nguyên tắc update là trường id của tất cả các object đưa vào phải khác 0. Nếu id bằng 0 thì return và không làm gì cả. Khi một danh sách object truyền vào, hàm sẽ thực hiện update tuần tự từng object.  
+Kết hợp hàm insert và hàm update ta thêm vào hàm save. Khi gọi hàm save, nếu id bằng 0 thì insert còn id khác 0 thì update.  
+
+```cpp
+DBCode save(T& obj) {
+    qint32 id = obj.getId();
+    if(id == 0) {
+        return insert(obj);
+    }
+    
+    return update(obj);
+}
+```
+
+Đến đây chỉ còn lại hàm delete là hoàn thành các phương thức cơ bản của DbSet. Hàm delete không khó, chỉ cần lấy id của object và build query delete dựa trên id.  
+Các hàm insert/update/delete/fetch/fetchWithRelation/save của DbSet được tạo ra để hỗ trợ các truy vấn cơ bản và thường xuyên được sử dụng, giảm bớt các thao tác lập đi lập lại khi sử dụng trực tiếp bằng interface của sqlite3. Về cơ bản ta đã có các hàm cần thiết để hỗ trợ các truy vấn phức tạp, nó chính là các hàm/class được xây dựng để triển khai DbSet. Việc cần là kết hợp các hàm lại để có interface dể dử dụng hơn.  
+Ý tưởng là dùng callback để cho người dùng tự định nghĩa các quá trình bind value và step. Sử dụng các hàm đã có sẵn trong trong DBHelper để hỗ trợ. Cụ thể nó sẽ có hình dạng như sau.  
+
+```cpp
+struct ComplexQueryParams {
+    QString query;
+    std::function<bool(sqlite3_stmt*)> cbFuncBind;
+    std::function<bool(sqlite3_stmt*)> cbFuncStep;
+    std::function<void(DBCode)> cbFuncError;
+    std::function<void()> cbFuncFinished;
+    sqlite3* connection = nullptr;
+};
+
+void DBHelper::execQuery(const ComplexQueryParams& params);
+```
+
+Sử dụng như sau.
+
+```cpp
+DBHelper::ComplexQueryParams cplxParams;
+cplxParams.query = "";
+cplxParams.connection = testDB.getConnection();
+cplxParams.cbFuncBind = [](sqlite3_stmt* stmt) -> bool {
+
+};
+cplxParams.cbFuncStep = [](sqlite3_stmt* stmt) -> bool {
+
+};
+cplxParams.cbFuncFinished = []() {
+
+};
+cplxParams.cbFuncError = [](DBCode code) {
+
+};
+```
+
+Trong callback cbFuncBind có thể sử dụng 
+
+```cpp
+// bind value từ các member của 1 object.
+obj.getRegister().bindValue("member_name", stmt);
+obj.getRegister().bindValue("member_name", stmt, 1);
+
+// bind value theo index của params.
+DBHelper::stmtBindValue(stmt, 1, value);
+```
+
+Trong callback cbFuncStep có thể sử dụng
+
+```cpp
+// set value cho member của object thông qua register.
+ColumnData data(2, stmt);
+obj.getRegister().setValue("member_name", data);
+
+// hoặc cast value từ columnData
+qint32 val = data;
+```
+
+Ví dụ fetch tất cả các user có id > 19 có thể viết như sau.
+
+```cpp
+QVector<User> rsUsers;
+DBHelper::ComplexQueryParams cplxParams;
+cplxParams.query = "select * from User where id > :id;";
+cplxParams.connection = testDB.getConnection();
+cplxParams.cbFuncBind = [&](sqlite3_stmt* stmt) -> bool {
+    if(!DBHelper::stmtBindValue(stmt, 1, 19)) {
+        return false;
+    }
+
+    return true;
+};
+cplxParams.cbFuncStep = [&](sqlite3_stmt* stmt) -> bool {
+    User user;
+    user.registerMember();
+    ColumnData idData(0, stmt);
+    // có thể set value thông qua register với member name.
+    user.getRegister().setValue("id", idData);
+
+    ColumnData nameData(2, stmt);
+    // hoặc dùng type cast.
+    user.m_name = (QString)nameData;
+
+    rsUsers.push_back(user);
+
+    return true;
+};
+cplxParams.cbFuncFinished = [&]() {
+    for(auto& user : rsUsers) {
+        qDebug() << user.m_id;
+        qDebug() << user.m_name;
+    }
+};
+cplxParams.cbFuncError = [](DBCode code) {
+    qDebug() << "error";
+};
+
+DBHelper::execQuery(cplxParams);
+```
+
+<br>
+<hr>
+<br>
+
+Chapter 4
+---------
+

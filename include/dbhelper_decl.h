@@ -16,6 +16,15 @@ namespace DBHelper
         QMultiMap<QString, ColumnData> rowData; // <table name, columndata>
     };
 
+    struct ComplexQueryParams {
+        QString query;
+        std::function<bool(sqlite3_stmt*)> cbFuncBind;
+        std::function<bool(sqlite3_stmt*)> cbFuncStep;
+        std::function<void(DBCode)> cbFuncError;
+        std::function<void()> cbFuncFinished;
+        sqlite3* connection = nullptr;
+    };
+
     bool stmtBindValue(sqlite3_stmt* stmt, qint32 idx, qint32 value);
     bool stmtBindValue(sqlite3_stmt* stmt, qint32 idx, const QString& value);
     bool stmtBindValue(sqlite3_stmt* stmt, qint32 idx, const QByteArray& value);
@@ -24,6 +33,7 @@ namespace DBHelper
     ProcessQueryStmtResult processQueryStmt(sqlite3_stmt* stmt, const QString& mainTableName);
     
     DBCode execQuery(const QString& query, sqlite3* connection);
+    void execQuery(const ComplexQueryParams& params);
     bool createTable(const QString& tableName, const DboRegister& dboRegister, sqlite3* connection);
 
     DBCode insert(const QString& tableName, const DboRegister& dboRegister, sqlite3* connection);

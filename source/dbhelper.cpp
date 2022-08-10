@@ -357,5 +357,68 @@ namespace DBHelper
         QString deleteQuery = templateDelete->arg(tableName, query);
         return DBHelper::execQuery(deleteQuery, connection); 
     }
+
+    void execQuery(const ComplexQueryParams& params)
+    {
+        if(params.connection == nullptr) {
+            if(params.cbFuncError) {
+                params.cbFuncError(DBCode::Failed);
+            }
+            return;
+        }
+        QByteArray query = params.query.toUtf8();
+
+        sqlite3_stmt* stmt = nullptr;
+        int rs = sqlite3_prepare_v2(params.connection, query, query.size(), &stmt, nullptr);
+        if(rs != SQLITE_OK) {
+            if(params.cbFuncError) {
+                params.cbFuncError(DBCode::PrepareFailed);
+            }
+            return;
+        }
+
+        if(params.cbFuncBind) {
+            if(!params.cbFuncBind(stmt)) {
+                params.cbFuncError(DBCode::BindValueFailed);
+            }
+        }
+
+        int rsStep = 0;
+        while (1) {
+            rsStep = sqlite3_step(stmt);
+            switch (rsStep) {
+            case SQLITE_ROW: {
+                if(params.cbFuncStep) {
+                    params.cbFuncStep(stmt);
+                }
+                break;
+            }
+            case SQLITE_BUSY:
+                sqlite3_finalize(stmt);
+                if(params.cbFuncError) {
+                    params.cbFuncError(DBCode::Busy);
+                }
+                return;
+
+            case SQLITE_MISUSE:
+            case SQLITE_CONSTRAINT:
+            case SQLITE_ERROR:
+                sqlite3_finalize(stmt);
+                if(params.cbFuncError) {
+                    params.cbFuncError(DBCode::Unknown);
+                }
+                return;
+
+            case SQLITE_DONE:
+            default:
+                sqlite3_finalize(stmt);
+
+                if(params.cbFuncFinished) {
+                    params.cbFuncFinished();
+                }
+                return;
+            }
+        }
+    }
     
 }

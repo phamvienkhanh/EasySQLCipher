@@ -98,6 +98,42 @@ int main(int argc, char *argv[])
 //            qDebug() << " ================== ";
 //        }
 //    }
+
+    QVector<User> rsUsers;
+    DBHelper::ComplexQueryParams cplxParams;
+    cplxParams.query = "select * from User where id > :id;";
+    cplxParams.connection = testDB.getConnection();
+    cplxParams.cbFuncBind = [&](sqlite3_stmt* stmt) -> bool {
+        if(!DBHelper::stmtBindValue(stmt, 1, 19)) {
+            return false;
+        }
+
+        return true;
+    };
+    cplxParams.cbFuncStep = [&](sqlite3_stmt* stmt) -> bool {
+        User user;
+        user.registerMember();
+        ColumnData idData(0, stmt);
+        user.getRegister().setValue("id", idData);
+
+        ColumnData nameData(2, stmt);
+        user.m_name = (QString)nameData;
+
+        rsUsers.push_back(user);
+
+        return true;
+    };
+    cplxParams.cbFuncFinished = [&]() {
+        for(auto& user : rsUsers) {
+            qDebug() << user.m_id;
+            qDebug() << user.m_name;
+        }
+    };
+    cplxParams.cbFuncError = [](DBCode code) {
+        qDebug() << "error";
+    };
+
+    DBHelper::execQuery(cplxParams);
     
             
     testDB.close();
