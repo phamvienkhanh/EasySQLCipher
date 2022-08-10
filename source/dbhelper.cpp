@@ -352,6 +352,12 @@ namespace DBHelper
         return DBCode::OK;
     }
 
+    DBCode update(const QString& tableName, const QString& query, sqlite3* connection)
+    {
+        QString updateQuery = templateUpdate2->arg(tableName, query);
+        return DBHelper::execQuery(updateQuery, connection);
+    }
+
     DBCode remove(const QString& tableName, const QString& query, sqlite3* connection)
     {
         QString deleteQuery = templateDelete->arg(tableName, query);

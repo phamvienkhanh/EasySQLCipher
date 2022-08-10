@@ -52,6 +52,26 @@ public:
         return DBCode::Failed;
     }
 
+    auto asyncInsert(T& obj) {
+        return QtConcurrent::run([obj, this] () mutable {
+            DBCode rs = insert(obj);
+            if(rs != DBCode::OK)
+                throw EZException(rs);
+
+            return obj;
+        });
+    }
+
+    auto asyncInsert(QVector<T>& listObj) {
+        return QtConcurrent::run([listObj, this] () mutable {
+            DBCode rs = insert(listObj);
+            if(rs != DBCode::OK)
+                throw rs;
+
+            return listObj;
+        });
+    }
+
     DBCode update(T& obj, const QStringList& updateCols = {}) {
         if(obj.getId() == 0)
             return DBCode::Failed;
@@ -86,6 +106,42 @@ public:
         return DBCode::Failed;
     }
 
+    DBCode update(const QString& query) {
+        T obj;
+        if(m_fnConProvider)
+            return DBHelper::update(obj.getTableName(), query, m_fnConProvider());
+
+        return DBCode::Failed;
+    }
+
+    auto asyncUpdate(T& obj, const QStringList& updateCols = {}) {
+        return QtConcurrent::run([obj, updateCols, this] () mutable {
+            DBCode rs = update(obj, updateCols);
+            if(rs != DBCode::OK)
+                throw EZException(rs);
+
+            return obj;
+        });
+    }
+
+    auto asyncUpdate(QVector<T>& listObj, const QStringList& updateCols = {}) {
+        return QtConcurrent::run([listObj, updateCols, this] () mutable {
+            DBCode rs = update(listObj, updateCols);
+            if(rs != DBCode::OK)
+                throw EZException(rs);
+
+            return listObj;
+        });
+    }
+
+    auto asyncUpdate(const QString& query) {
+        return QtConcurrent::run([query, this] () {
+            DBCode rs = update(query);
+            if(rs != DBCode::OK)
+                throw EZException(rs);
+        });
+    }
+
     DBCode save(T& obj) {
         qint32 id = obj.getId();
         if(id == 0) {
@@ -93,6 +149,15 @@ public:
         }
         
         return update(obj);
+    }
+
+    auto asyncSave(T& obj) {
+        qint32 id = obj.getId();
+        if(id == 0) {
+            return asyncInsert(obj);
+        }
+
+        return asyncUpdate(obj);
     }
     
     DBCode remove(const QString& query) {
@@ -117,8 +182,32 @@ public:
         return DBHelper::remove(obj.getTableName(), whereClause, m_fnConProvider());
     }
 
+    auto asyncRemove(const QString& query) {
+        return QtConcurrent::run([query, this] () {
+            DBCode rs = remove(query);
+            if(rs != DBCode::OK)
+                throw EZException(rs);
+        });
+    }
+
+    auto asyncRemove(const T& obj) {
+        return QtConcurrent::run([obj, this] () {
+            DBCode rs = remove(obj);
+            if(rs != DBCode::OK)
+                throw EZException(rs);
+        });
+    }
+
+    auto asyncRemove(const QVector<T>& objs) {
+        return QtConcurrent::run([objs, this] () {
+            DBCode rs = remove(objs);
+            if(rs != DBCode::OK)
+                throw EZException(rs);
+        });
+    }
+
     DBHelper::Query<T> query(const QString& query) {
-        return std::move(DBHelper::Query<T>{query, m_fnConProvider});
+        return DBHelper::Query<T>(query, m_fnConProvider);
     }
 
     void setFnConProvider(std::function<sqlite3* (void)> fn) {

@@ -433,3 +433,50 @@ DBHelper::execQuery(cplxParams);
 Chapter 4
 ---------
 
+Bất đồng bộ là công việc tiếp theo phải thực hiện. Bất đồng bộ không làm cho ứng dụng nhanh hơn, nhưng nó rất cần cho ứng dụng GUI. Các tác vụ truy vấn DB mất nhiều thời gian nếu chạy trên main thread thì ảnh hưởng rất lớn đến trải nghiệm. Bất đồng bộ giúp ta không vô tình block UI khi lỡ tay truy vấn DB quá nhiều.  
+Qt6 mang lại một cơ chế bất đồng bộ rất hiện đại và linh động để sử dụng. Xây dựng các hàm bất đồng bộ bằng QtConcurrent của Qt6 rất dễ, không phải dùng futurewatcher sau đó connect để nhận kết quả. Qt6 mang đến concept hiện đại async().then().then().catch()... nó giúp logic code mạch lạc, dễ theo dõi hơn. Cụ thể tính năng bất đồng bộ sẽ được thực hiện trên DbSet như sau.
+
+```cpp
+auto asyncInsert(T& obj) {
+    return QtConcurrent::run([obj, this] () mutable {
+        DBCode rs = insert(obj);
+        if(rs != DBCode::OK)
+            throw EZException(rs);
+
+        return obj;
+    });
+}
+```
+
+Chú ý, lambda sẽ được chạy trên thread pool nên phải copy obj chứ không thể dùng reference, mutable thêm vào là do insert yêu cầu reference để set id sau khi insert. Sử dụng như sau.  
+
+```cpp
+user.m_id = 0;
+user.m_name = "kakakak";
+user.m_data = "daaaaaa";
+testDB.users.asyncInsert(user)
+    .then(&app, [](User user){
+        qDebug() << user.m_id;
+        qDebug() << user.m_name;
+    })
+    .onFailed(&app, [](const EZException& e){
+        qDebug() << "error : " << (int)e.code();
+    });
+```
+
+EZ GAME!  
+
+Chú ý: hàm select sẽ khác một chút. Thay vì capture this vào lambda thì bắt buộc phải capture value của this. Vì this ở đây là DBHelper::Query trả về từ hàm DbSet::query. Nên nếu capture this vào thì trước khi lambda chạy trong thread pool thì this đã bị huỷ. Copy value this vào sẽ giải quyết được trường hợp này.  
+
+```cpp
+auto asyncSelect(const QString& colSelect) const {
+    return QtConcurrent::run([colSelect, t = *this] () {
+        auto result = t.select(colSelect);
+        if(result.retCode != DBCode::OK && result.retCode != DBCode::Empty)
+            throw EZException(result.retCode);
+
+        return result;
+    });
+}
+```
+

@@ -47,4 +47,16 @@ struct FetchWithRelationParams {
     sqlite3* connection = nullptr;
 };
 
+class EZException : public QException
+{
+public:
+    EZException(DBCode code): _code(code){}
+    void raise() const override { throw *this; }
+    EZException *clone() const override { return new EZException(*this); }
+    const DBCode& code() const {return _code;}
+
+private:
+    DBCode _code = DBCode::Unknown;
+};
+
 #endif // DBO_INC_TYPES_H

@@ -3,11 +3,14 @@
 
 int main(int argc, char *argv[])
 {
+    QCoreApplication app(argc, argv);
+
     TestDB testDB;
     DBInitParam param;
     param.dbPath = "./test.db";
     param.openMode = SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE | SQLITE_OPEN_FULLMUTEX;
     qDebug() << (qint32)testDB.init(param);
+    qDebug() << "thread safe : " << sqlite3_threadsafe();
 
     testDB.users.createTable();
     testDB.messages.createTable();
@@ -59,12 +62,12 @@ int main(int argc, char *argv[])
                   .with<Email>("address")
                   .select("id, name");
     
-    auto result2 = testDB.emails
-                  .query("where #1.id = 1")                  
-                  .with<User>("name")
-                  .select("*");
+//    auto result2 = testDB.emails
+//                  .query("where #1.id = 1")
+//                  .with<User>("name")
+//                  .select("*");
     
-    auto result3 = testDB.users.query("where id = 3").select("sip_id, name");
+//    auto result3 = testDB.users.query("where id = 3").select("sip_id, name");
     
     QVector<User> listUsers;
 //    for(auto i = 3; i < 7; i++) {
@@ -75,20 +78,20 @@ int main(int argc, char *argv[])
 //    }
 //    auto result4 = testDB.users.remove(listUsers);
 
-    user.m_id = 8;
+    user.m_id = 0;
     user.m_name = "hoho";
     listUsers.push_back(user);
 
-    user.m_id = 9;
+    user.m_id = 0;
     user.m_name = "blalala";
     listUsers.push_back(user);
 
-    user.m_id = 12;
+    user.m_id = 0;
     user.m_name = "kakakak";
     user.m_data = "daaaaaa";
     listUsers.push_back(user);
 
-    auto r = testDB.users.update(listUsers, {"name", "data"});
+//    auto r = testDB.users.update(listUsers, {"name", "data"});
     
 //    if(result.retCode == DBCode::OK) {
 //        for(auto& usr : result.value) {
@@ -99,43 +102,85 @@ int main(int argc, char *argv[])
 //        }
 //    }
 
-    QVector<User> rsUsers;
-    DBHelper::ComplexQueryParams cplxParams;
-    cplxParams.query = "select * from User where id > :id;";
-    cplxParams.connection = testDB.getConnection();
-    cplxParams.cbFuncBind = [&](sqlite3_stmt* stmt) -> bool {
-        if(!DBHelper::stmtBindValue(stmt, 1, 19)) {
-            return false;
-        }
+//    QVector<User> rsUsers;
+//    DBHelper::ComplexQueryParams cplxParams;
+//    cplxParams.query = "select * from User where id > :id;";
+//    cplxParams.connection = testDB.getConnection();
+//    cplxParams.cbFuncBind = [&](sqlite3_stmt* stmt) -> bool {
+//        if(!DBHelper::stmtBindValue(stmt, 1, 19)) {
+//            return false;
+//        }
 
-        return true;
-    };
-    cplxParams.cbFuncStep = [&](sqlite3_stmt* stmt) -> bool {
-        User user;
-        user.registerMember();
-        ColumnData idData(0, stmt);
-        user.getRegister().setValue("id", idData);
+//        return true;
+//    };
+//    cplxParams.cbFuncStep = [&](sqlite3_stmt* stmt) -> bool {
+//        User user;
+//        user.registerMember();
+//        ColumnData idData(0, stmt);
+//        user.getRegister().setValue("id", idData);
 
-        ColumnData nameData(2, stmt);
-        user.m_name = (QString)nameData;
+//        ColumnData nameData(2, stmt);
+//        user.m_name = (QString)nameData;
 
-        rsUsers.push_back(user);
+//        rsUsers.push_back(user);
 
-        return true;
-    };
-    cplxParams.cbFuncFinished = [&]() {
-        for(auto& user : rsUsers) {
-            qDebug() << user.m_id;
-            qDebug() << user.m_name;
-        }
-    };
-    cplxParams.cbFuncError = [](DBCode code) {
-        qDebug() << "error";
-    };
+//        return true;
+//    };
+//    cplxParams.cbFuncFinished = [&]() {
+//        for(auto& user : rsUsers) {
+//            qDebug() << user.m_id;
+//            qDebug() << user.m_name;
+//        }
+//    };
+//    cplxParams.cbFuncError = [](DBCode code) {
+//        qDebug() << "error";
+//    };
 
-    DBHelper::execQuery(cplxParams);
+//    DBHelper::execQuery(cplxParams);
     
-            
+
+    user.m_id = 0;
+    user.m_name = "kakakak";
+    user.m_data = "daaaaaa";
+    listUsers.push_back(user);
+
+
+
+    testDB.users.asyncInsert(user)
+        .then(&app, [](const User& users){
+            qDebug() << "ok";
+            qDebug() << users.m_id;
+        })
+        .onFailed(&app, [](const EZException& e){
+            qDebug() << "error : " << (int)e.code();
+        });
+
+
+    testDB.users
+        .asyncUpdate("set sip_id = 'blalalalal' where id > 23;")
+        .then(&app, [] () {
+            qDebug() << "code : ";
+        })
+        .onFailed(&app, [](const EZException& e){
+            qDebug() << (int)e.code();
+        });
+
+
+    for(auto i = 0; i < 100; i++) {
+        testDB.users.query("where #1.id > 7")
+            .with<Email>("*")
+            .asyncSelect("*")
+            .then([](Result<QVector<User>, DBCode> result){
+                qDebug() << (int)result.value.size();
+            })
+            .onFailed([](const EZException& e){
+                qDebug() << (int)e.code();
+            });
+    }
+
+
+    app.exec();
+
     testDB.close();
 
     return 0;

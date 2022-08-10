@@ -43,6 +43,7 @@ namespace DBHelper
                   sqlite3* connection);
     DBCode update(const QString& tableName, const QVector<DboRegister*>& listDboRegister, const QStringList& updateCols,
                   sqlite3* connection);
+    DBCode update(const QString& tableName, const QString& query, sqlite3* connection);
     
     DBCode remove(const QString& tableName, const QString& query, sqlite3* connection);
 

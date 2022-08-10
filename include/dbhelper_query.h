@@ -12,7 +12,7 @@ namespace DBHelper
 template<typename T>
 class Query {
 public:
-    Result<QVector<T>, DBCode> select(const QString& colSelect) {
+    Result<QVector<T>, DBCode> select(const QString& colSelect) const {
         Result<QVector<T>, DBCode> rs;
         T obj;
         QString tableName = obj.getTableName();
@@ -34,6 +34,16 @@ public:
         
         rs.retCode = DBCode::Failed;
         return rs;
+    }
+
+    auto asyncSelect(const QString& colSelect) const {
+        return QtConcurrent::run([colSelect, t = *this] () {
+            auto result = t.select(colSelect);
+            if(result.retCode != DBCode::OK && result.retCode != DBCode::Empty)
+                throw EZException(result.retCode);
+
+            return result;
+        });
     }
     
     template<typename R>
