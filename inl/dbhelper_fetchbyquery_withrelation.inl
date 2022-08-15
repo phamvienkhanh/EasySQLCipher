@@ -50,8 +50,6 @@ Result<QVector<T>, DBCode> fetchByQueryWithRelation(FetchWithRelationParams& par
     QString strQuery = templateSelect->arg(selectClause, param.tableName, joinClause + param.query);
     QByteArray utf8Query = strQuery.toUtf8();
     
-    qDebug() << utf8Query;
-    
     sqlite3_stmt* stmt = nullptr;
     if(sqlite3_prepare_v2(param.connection, utf8Query, utf8Query.size(), &stmt, 0) != SQLITE_OK) {
         result.retCode = DBCode::PrepareFailed;
@@ -61,11 +59,7 @@ Result<QVector<T>, DBCode> fetchByQueryWithRelation(FetchWithRelationParams& par
     QHash<qint32, qint32> hashIndex; // <id, index>
     QVector<T*> ptrResults;
     auto freePtrResults = [&](){
-        for(auto& ptr : ptrResults) {
-            if(ptr) {
-                delete ptr;
-            }
-        }
+        qDeleteAll(ptrResults);
         ptrResults.clear();        
     };
             

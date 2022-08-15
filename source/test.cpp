@@ -56,11 +56,11 @@ int main(int argc, char *argv[])
 //    testDB.users.insert(listUser);
 //    testDB.messages.insert(listUser2);
 
-    auto result = testDB.users
-                  .query("where #1.id > 1")                  
-                  .with<Message>("body")
-                  .with<Email>("address")
-                  .select("id, name");
+//    auto result = testDB.users
+//                  .query("where #1.id > 1")
+//                  .with<Message>("body")
+//                  .with<Email>("address")
+//                  .select("id, name");
     
 //    auto result2 = testDB.emails
 //                  .query("where #1.id = 1")
@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
     
 //    auto result3 = testDB.users.query("where id = 3").select("sip_id, name");
     
-    QVector<User> listUsers;
+//    QVector<User> listUsers;
 //    for(auto i = 3; i < 7; i++) {
 //        User user;
 //        user.m_id = i;
@@ -78,18 +78,18 @@ int main(int argc, char *argv[])
 //    }
 //    auto result4 = testDB.users.remove(listUsers);
 
-    user.m_id = 0;
-    user.m_name = "hoho";
-    listUsers.push_back(user);
+//    user.m_id = 0;
+//    user.m_name = "hoho";
+//    listUsers.push_back(user);
 
-    user.m_id = 0;
-    user.m_name = "blalala";
-    listUsers.push_back(user);
+//    user.m_id = 0;
+//    user.m_name = "blalala";
+//    listUsers.push_back(user);
 
-    user.m_id = 0;
-    user.m_name = "kakakak";
-    user.m_data = "daaaaaa";
-    listUsers.push_back(user);
+//    user.m_id = 0;
+//    user.m_name = "kakakak";
+//    user.m_data = "daaaaaa";
+//    listUsers.push_back(user);
 
 //    auto r = testDB.users.update(listUsers, {"name", "data"});
     
@@ -139,45 +139,64 @@ int main(int argc, char *argv[])
 //    DBHelper::execQuery(cplxParams);
     
 
-    user.m_id = 0;
-    user.m_name = "kakakak";
-    user.m_data = "daaaaaa";
-    listUsers.push_back(user);
+//    user.m_id = 0;
+//    user.m_name = "kakakak";
+//    user.m_data = "daaaaaa";
+//    listUsers.push_back(user);
 
 
 
-    testDB.users.asyncInsert(user)
-        .then(&app, [](const User& users){
-            qDebug() << "ok";
-            qDebug() << users.m_id;
-        })
-        .onFailed(&app, [](const EZException& e){
-            qDebug() << "error : " << (int)e.code();
-        });
+//    testDB.users.asyncInsert(user)
+//        .then(&app, [](const User& users){
+//            qDebug() << "ok";
+//            qDebug() << users.m_id;
+//        })
+//        .onFailed(&app, [](const EZException& e){
+//            qDebug() << "error : " << (int)e.code();
+//        });
 
 
-    testDB.users
-        .asyncUpdate("set sip_id = 'blalalalal' where id > 23;")
-        .then(&app, [] () {
-            qDebug() << "code : ";
-        })
-        .onFailed(&app, [](const EZException& e){
-            qDebug() << (int)e.code();
-        });
+//    testDB.users
+//        .asyncUpdate("set sip_id = 'blalalalal' where id > 23;")
+//        .then(&app, [] () {
+//            qDebug() << "code : ";
+//        })
+//        .onFailed(&app, [](const EZException& e){
+//            qDebug() << (int)e.code();
+//        });
 
 
-    for(auto i = 0; i < 100; i++) {
-        testDB.users.query("where #1.id > 7")
-            .with<Email>("*")
-            .asyncSelect("*")
-            .then([](Result<QVector<User>, DBCode> result){
-                qDebug() << (int)result.value.size();
-            })
-            .onFailed([](const EZException& e){
-                qDebug() << (int)e.code();
-            });
+//    for(auto i = 0; i < 100; i++) {
+//        testDB.users.query("where #1.id > 7")
+//            .with<Email>("*")
+//            .asyncSelect("*")
+//            .then([](Result<QVector<User>, DBCode> result){
+//                qDebug() << (int)result.value.size();
+//            })
+//            .onFailed([](const EZException& e){
+//                qDebug() << (int)e.code();
+//            });
+//    }
+
+
+    {
+        for(auto i = 0; i < 100; i++) {
+                      testDB.emails
+                      .query("where id > 2")
+//                      .with<User>("*")
+                      .asyncSelect("*")
+                      .then([](Result<QVector<Email>, DBCode> result) {
+                          if(result.retCode == DBCode::OK) {
+                              qDebug() << result.value.size();
+                          }
+                      })
+                      .onFailed([](EZException e) {
+                          qDebug() << (int)e.code();
+                      });
+
+//            auto rs = testDB.emails.query("id > 1").asyncSelect("*")
+        }
     }
-
 
     app.exec();
 

@@ -12,7 +12,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 option(ENABLE_PRECOMPILED_HEADER OFF)
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Test)
 
 include_directories(
     include
@@ -66,3 +66,18 @@ target_compile_definitions(EasySQLCipher PRIVATE EASYSQLCIPHER_LIBRARY)
 # for test
 add_executable(TestSource source/test.h source/test.cpp)
 target_link_libraries(TestSource EasySQLCipher Qt${QT_VERSION_MAJOR}::Core)
+
+# unit test
+enable_testing(true)
+add_executable(eztest
+    tests/test1.cpp
+    tests/dbo/user.h
+    tests/dbo/message.h
+    tests/dbo/email.h
+    tests/dbo/email.cpp
+)
+
+target_link_libraries(eztest PRIVATE Qt::Test sqlcipher easysqlcipher)
+add_test(NAME eztest COMMAND eztest)
+
+

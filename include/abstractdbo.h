@@ -23,7 +23,19 @@ protected:
     
     template<typename T>
     void relation(const QString& relation, T* value, const QString& tableLeft) {
-        static_assert(std::is_base_of_v<AbstractDBO, T>, "Error: relation type must base on AbstractDBO");        
+        static_assert(std::is_base_of_v<AbstractDBO, T>, "Error: relation type must base on AbstractDBO");
+        m_dboRegister.relation(relation, value, tableLeft);
+    }
+
+    template<typename T>
+    void relation(const QString& relation, std::shared_ptr<T>& sharePtr, const QString& tableLeft) {
+        static_assert(std::is_base_of_v<AbstractDBO, T>, "Error: relation type must base on AbstractDBO");
+
+        if(sharePtr == nullptr) {
+            sharePtr = std::make_shared<T>();
+        }
+
+        T* value = sharePtr.get();
         m_dboRegister.relation(relation, value, tableLeft);
     }
     

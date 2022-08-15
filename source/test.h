@@ -63,7 +63,12 @@ public:
 class Email : public AbstractDBO
 {
 public:
-    Email(){}
+    Email(){
+
+    }
+
+    ~Email(){
+    }
 
     QString getTableName() const override {
         return "Email";
@@ -75,14 +80,14 @@ public:
         bind("sip_id", "text", &m_sip_id);
         bind("address", "text", &m_address);
         
-        relation("sip_id=sip_id", &m_user, getTableName());
+        relation("sip_id=sip_id", m_user, getTableName());
     }
 
 public:
     QString m_address;
     QString m_sip_id;
     
-    User m_user;
+    std::shared_ptr<User> m_user;
 };
 
 class TestDB : public EasySQLCipher
