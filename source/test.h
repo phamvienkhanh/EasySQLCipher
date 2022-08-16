@@ -57,7 +57,7 @@ public:
     
     QVector<Message> m_messages;
     QVector<Email>   m_emails;
-    
+
 };
 
 class Email : public AbstractDBO
@@ -88,6 +88,7 @@ public:
     QString m_sip_id;
     
     std::shared_ptr<User> m_user;
+
 };
 
 class TestDB : public EasySQLCipher

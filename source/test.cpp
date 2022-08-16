@@ -183,7 +183,7 @@ int main(int argc, char *argv[])
         for(auto i = 0; i < 100; i++) {
                       testDB.emails
                       .query("where id > 2")
-//                      .with<User>("*")
+                      .with<User>("*")
                       .asyncSelect("*")
                       .then([](Result<QVector<Email>, DBCode> result) {
                           if(result.retCode == DBCode::OK) {
