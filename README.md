@@ -1,6 +1,6 @@
 ## EasySQLCipher
 
-**EasySQLCipher** được xây dựng nhằm mục đích hỗ trợ thao tác truy vấn trên sqlcipher. Cung cấp cơ chế truy vấn bất đồng bộ dựa trên QtConcurrent của Qt6. Giúp việc truy vấn được thực hiện dễ dàng hơn.
+**EasySQLCipher** được xây dựng nhằm mục đích hỗ trợ thao tác truy vấn trên sqlcipher. Cung cấp cơ chế truy vấn bất đồng bộ dựa trên QtConcurrent của Qt6. Giúp việc truy vấn được thực hiện dễ dàng hơn. Chi tiết về ý tưởng và cách xây dựng có thể xem [quá trình xây dựng mô hình](./doc/README.md).  
 
 ## Build
 SQLCipher là submodule của project, sau khi clone source chạy git submodule để pull nó về.
