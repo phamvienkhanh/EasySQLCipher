@@ -47,7 +47,7 @@ public:
     }
 
     auto asyncInsert(T& obj) {
-        return QtConcurrent::run([obj, this] () mutable {
+        return QtConcurrent::run(m_dbContext->getWorkerPool(), [obj, this] () mutable {
             DBCode rs = insert(obj);
             if(rs != DBCode::OK)
                 throw EZException(rs);
@@ -57,7 +57,7 @@ public:
     }
 
     auto asyncInsert(QVector<T>& listObj) {
-        return QtConcurrent::run([listObj, this] () mutable {
+        return QtConcurrent::run(m_dbContext->getWorkerPool(), [listObj, this] () mutable {
             DBCode rs = insert(listObj);
             if(rs != DBCode::OK)
                 throw rs;
@@ -100,7 +100,7 @@ public:
     }
 
     auto asyncUpdate(T& obj, const QStringList& updateCols = {}) {
-        return QtConcurrent::run([obj, updateCols, this] () mutable {
+        return QtConcurrent::run(m_dbContext->getWorkerPool(), [obj, updateCols, this] () mutable {
             DBCode rs = update(obj, updateCols);
             if(rs != DBCode::OK)
                 throw EZException(rs);
@@ -110,7 +110,7 @@ public:
     }
 
     auto asyncUpdate(QVector<T>& listObj, const QStringList& updateCols = {}) {
-        return QtConcurrent::run([listObj, updateCols, this] () mutable {
+        return QtConcurrent::run(m_dbContext->getWorkerPool(), [listObj, updateCols, this] () mutable {
             DBCode rs = update(listObj, updateCols);
             if(rs != DBCode::OK)
                 throw EZException(rs);
@@ -120,7 +120,7 @@ public:
     }
 
     auto asyncUpdate(const QString& query) {
-        return QtConcurrent::run([query, this] () {
+        return QtConcurrent::run(m_dbContext->getWorkerPool(), [query, this] () {
             DBCode rs = update(query);
             if(rs != DBCode::OK)
                 throw EZException(rs);
@@ -168,7 +168,7 @@ public:
     }
 
     auto asyncRemove(const QString& query) {
-        return QtConcurrent::run([query, this] () {
+        return QtConcurrent::run(m_dbContext->getWorkerPool(), [query, this] () {
             DBCode rs = remove(query);
             if(rs != DBCode::OK)
                 throw EZException(rs);
@@ -176,7 +176,7 @@ public:
     }
 
     auto asyncRemove(const T& obj) {
-        return QtConcurrent::run([obj, this] () {
+        return QtConcurrent::run(m_dbContext->getWorkerPool(), [obj, this] () {
             DBCode rs = remove(obj);
             if(rs != DBCode::OK)
                 throw EZException(rs);
@@ -184,7 +184,7 @@ public:
     }
 
     auto asyncRemove(const QVector<T>& objs) {
-        return QtConcurrent::run([objs, this] () {
+        return QtConcurrent::run(m_dbContext->getWorkerPool(), [objs, this] () {
             DBCode rs = remove(objs);
             if(rs != DBCode::OK)
                 throw EZException(rs);
@@ -192,7 +192,7 @@ public:
     }
 
     DBHelper::Query<T> query(const QString& query) {
-        return DBHelper::Query<T>(query, m_dbContext->getConnection());
+        return DBHelper::Query<T>(query, m_dbContext);
     }
 
     void setDbContext(EasySQLCipher* dbContext) {

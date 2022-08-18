@@ -10,5 +10,6 @@
 #include <QStringList>
 #include <QHashIterator>
 #include <QtConcurrent/QtConcurrent>
+#include <QThreadPool>
 
 #endif // PRECOMPILED_H

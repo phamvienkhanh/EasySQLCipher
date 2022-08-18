@@ -5,6 +5,7 @@
 
 #include "types.h"
 #include "dbhelper.h"
+#include "easysqlcipher.h"
 
 namespace DBHelper
 {
@@ -15,29 +16,25 @@ public:
     Result<QVector<T>, DBCode> select(const QString& colSelect) const {
         Result<QVector<T>, DBCode> rs;
         T obj;
+
         QString tableName = obj.getTableName();
-        if(m_connection) {
-            if(m_withTables.isEmpty()) {
-                return DBHelper::fetchByQuery<T>(tableName, m_query, colSelect, m_connection);
-            }
-            else {
-                FetchWithRelationParams params;
-                params.tableName = tableName;
-                params.query = m_query;
-                params.colSelect = colSelect;
-                params.withTables = m_withTables;
-                params.connection = m_connection;
-                
-                return DBHelper::fetchByQueryWithRelation<T>(params); 
-            }
+        if(m_withTables.isEmpty()) {
+            return DBHelper::fetchByQuery<T>(tableName, m_query, colSelect, m_dbContext->getConnection());
         }
-        
-        rs.retCode = DBCode::Failed;
-        return rs;
+        else {
+            FetchWithRelationParams params;
+            params.tableName = tableName;
+            params.query = m_query;
+            params.colSelect = colSelect;
+            params.withTables = m_withTables;
+            params.connection = m_dbContext->getConnection();
+
+            return DBHelper::fetchByQueryWithRelation<T>(params);
+        }
     }
 
     auto asyncSelect(const QString& colSelect) const {
-        return QtConcurrent::run([colSelect, t = *this] () {
+        return QtConcurrent::run(m_dbContext->getWorkerPool(), [colSelect, t = *this] () {
             auto result = t.select(colSelect);
             if(result.retCode != DBCode::OK && result.retCode != DBCode::Empty)
                 throw EZException(result.retCode);
@@ -56,15 +53,15 @@ public:
         return *this;
     }
     
-    Query(const QString& query, sqlite3* con) {
+    Query(const QString& query, EasySQLCipher* dbContext) {
         m_query = query;
-        m_connection = con;
+        m_dbContext = dbContext;
     }
     
 private:
     QString m_query;
     QHash<QString, QString> m_withTables;
-    sqlite3* m_connection = nullptr;
+    EasySQLCipher* m_dbContext = nullptr;
 };
 }
 

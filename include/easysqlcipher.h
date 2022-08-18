@@ -12,9 +12,11 @@ public:
     void close();
 
     sqlite3* getConnection() {return m_connection;}
+    QThreadPool* getWorkerPool() const {return m_workerPool;}
 
 protected:
     sqlite3* m_connection = nullptr;
+    QThreadPool* m_workerPool;
 };
 
 #endif // EASYSQLCIPHER_H

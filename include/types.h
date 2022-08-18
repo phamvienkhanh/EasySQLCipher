@@ -10,6 +10,7 @@
 struct DBInitParam {
     QString dbPath;
     int     openMode;
+    qint32  maxThreadCount = 1;
 };
 
 struct ColumnInfo {

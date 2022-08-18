@@ -94,8 +94,7 @@ private slots:
             })
             .onFailed([](const EZException& e){
                 QVERIFY(false);
-            })
-            .waitForFinished();
+            });
     }
 
     void insert_list_data_sync() {
@@ -144,8 +143,7 @@ private slots:
             })
             .onFailed([](const EZException& e){
                 QVERIFY(false);
-            })
-            .waitForFinished();
+            });
     }
 
     void update_data_sync() {
@@ -171,8 +169,7 @@ private slots:
             })
             .onFailed([](const EZException& e){
               QVERIFY(false);
-            })
-            .waitForFinished();
+            });
     }
 
     void update_list_data_sync() {
@@ -213,8 +210,7 @@ private slots:
             })
             .onFailed([](const EZException& e){
                 QVERIFY(false);
-            })
-            .waitForFinished();
+            });
     }
 
     void remove_data_sync() {
@@ -234,8 +230,7 @@ private slots:
             })
             .onFailed([](const EZException& code){
                 QVERIFY(false);
-            })
-            .waitForFinished();
+            });
     }
 
     void close_db() {
