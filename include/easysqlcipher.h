@@ -2,10 +2,7 @@
 #define EASYSQLCIPHER_H
 
 #include <sqlcipher/sqlite3.h>
-
-#include "dbset.h"
 #include "types.h"
-#include "abstractdbo.h"
 
 class EasySQLCipher
 {

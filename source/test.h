@@ -2,6 +2,8 @@
 #define TEST_H
 
 #include "easysqlcipher.h"
+#include "abstractdbo.h"
+#include "dbset.h"
 
 class Message : public AbstractDBO
 {
@@ -95,13 +97,9 @@ class TestDB : public EasySQLCipher
 {
 public:
     TestDB() {
-        auto getConnection = [this](){
-            return m_connection;
-        };
-
-        users.setFnConProvider(getConnection);
-        messages.setFnConProvider(getConnection);
-        emails.setFnConProvider(getConnection);
+        users.setDbContext(this);
+        messages.setDbContext(this);
+        emails.setDbContext(this);
     }
 
     DbSet<User>    users;

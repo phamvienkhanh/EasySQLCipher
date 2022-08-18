@@ -16,9 +16,9 @@ public:
         Result<QVector<T>, DBCode> rs;
         T obj;
         QString tableName = obj.getTableName();
-        if(m_fnConProvider) {
+        if(m_connection) {
             if(m_withTables.isEmpty()) {
-                return DBHelper::fetchByQuery<T>(tableName, m_query, colSelect, m_fnConProvider());
+                return DBHelper::fetchByQuery<T>(tableName, m_query, colSelect, m_connection);
             }
             else {
                 FetchWithRelationParams params;
@@ -26,7 +26,7 @@ public:
                 params.query = m_query;
                 params.colSelect = colSelect;
                 params.withTables = m_withTables;
-                params.connection = m_fnConProvider();
+                params.connection = m_connection;
                 
                 return DBHelper::fetchByQueryWithRelation<T>(params); 
             }
@@ -54,17 +54,17 @@ public:
         }
         
         return *this;
-    } 
+    }
     
-    Query(const QString& query, std::function<sqlite3* (void)> fnCon) {
+    Query(const QString& query, sqlite3* con) {
         m_query = query;
-        m_fnConProvider = fnCon;
+        m_connection = con;
     }
     
 private:
     QString m_query;
     QHash<QString, QString> m_withTables;
-    std::function<sqlite3* (void)> m_fnConProvider;
+    sqlite3* m_connection = nullptr;
 };
 }
 

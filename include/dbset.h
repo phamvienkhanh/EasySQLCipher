@@ -4,6 +4,7 @@
 #include "types.h"
 #include "abstractdbo.h"
 #include "dbhelper_query.h"
+#include "easysqlcipher.h"
 
 template<typename T>
 class DbSet
@@ -20,10 +21,7 @@ public:
         QString tableName = obj.getTableName();
         DboRegister& regist = obj.getRegister();
 
-        if(m_fnConProvider)
-            return DBHelper::createTable(tableName, regist, m_fnConProvider());
-
-        return false;
+        return DBHelper::createTable(tableName, regist, m_dbContext->getConnection());
     }
 
     DBCode insert(T& obj) {
@@ -31,9 +29,7 @@ public:
         QString tableName = obj.getTableName();
         DboRegister& regist = obj.getRegister();
 
-        if(m_fnConProvider)
-            return DBHelper::insert(tableName, regist, m_fnConProvider());
-        return DBCode::Failed;
+        return DBHelper::insert(tableName, regist, m_dbContext->getConnection());
     }
 
     DBCode insert(QVector<T>& listObj) {
@@ -47,9 +43,7 @@ public:
             listRegists.push_back(&iObj.getRegister());
         }
 
-        if(m_fnConProvider)
-            return DBHelper::insert(tableName, listRegists, m_fnConProvider());
-        return DBCode::Failed;
+        return DBHelper::insert(tableName, listRegists, m_dbContext->getConnection());
     }
 
     auto asyncInsert(T& obj) {
@@ -80,10 +74,7 @@ public:
         QString tableName = obj.getTableName();
         DboRegister& regist = obj.getRegister();
 
-        if(m_fnConProvider)
-            return DBHelper::update(tableName, regist, updateCols, m_fnConProvider());
-
-        return DBCode::Failed;
+        return DBHelper::update(tableName, regist, updateCols, m_dbContext->getConnection());
     }
     
     DBCode update(QVector<T>& listObj, const QStringList& updateCols = {}) {
@@ -100,18 +91,12 @@ public:
             listRegists.push_back(&iObj.getRegister());
         }
 
-        if(m_fnConProvider)
-            return DBHelper::update(tableName, listRegists, updateCols, m_fnConProvider());
-
-        return DBCode::Failed;
+        return DBHelper::update(tableName, listRegists, updateCols, m_dbContext->getConnection());
     }
 
     DBCode update(const QString& query) {
         T obj;
-        if(m_fnConProvider)
-            return DBHelper::update(obj.getTableName(), query, m_fnConProvider());
-
-        return DBCode::Failed;
+        return DBHelper::update(obj.getTableName(), query, m_dbContext->getConnection());
     }
 
     auto asyncUpdate(T& obj, const QStringList& updateCols = {}) {
@@ -162,12 +147,12 @@ public:
     
     DBCode remove(const QString& query) {
         T obj;
-        return DBHelper::remove(obj.getTableName(), query, m_fnConProvider());
+        return DBHelper::remove(obj.getTableName(), query, m_dbContext->getConnection());
     }
 
     DBCode remove(const T& obj) {
         QString whereClause = QString("WHERE id = %1").arg(obj.getId());
-        return DBHelper::remove(obj.getTableName(), whereClause, m_fnConProvider());
+        return DBHelper::remove(obj.getTableName(), whereClause, m_dbContext->getConnection());
     }
     
     DBCode remove(const QVector<T>& objs) {
@@ -179,7 +164,7 @@ public:
         
         QString whereClause = QString("WHERE id IN (%1)").arg(strListIds);
         T obj;
-        return DBHelper::remove(obj.getTableName(), whereClause, m_fnConProvider());
+        return DBHelper::remove(obj.getTableName(), whereClause, m_dbContext->getConnection());
     }
 
     auto asyncRemove(const QString& query) {
@@ -207,15 +192,15 @@ public:
     }
 
     DBHelper::Query<T> query(const QString& query) {
-        return DBHelper::Query<T>(query, m_fnConProvider);
+        return DBHelper::Query<T>(query, m_dbContext->getConnection());
     }
 
-    void setFnConProvider(std::function<sqlite3* (void)> fn) {
-        m_fnConProvider = fn;
+    void setDbContext(EasySQLCipher* dbContext) {
+        m_dbContext = dbContext;
     }
     
 private:
-    std::function<sqlite3* (void)> m_fnConProvider;
+    EasySQLCipher* m_dbContext = nullptr;
 };
 
 #endif // DBSET_H

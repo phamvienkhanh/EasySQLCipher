@@ -53,6 +53,9 @@ namespace DBHelper
     
     DBCode execQuery(const QString& query, sqlite3* connection)
     {
+        if(!connection)
+            return DBCode::Failed;
+
         char* mesgError = nullptr;
         int rs = sqlite3_exec(connection, query.toUtf8(), nullptr, nullptr, &mesgError);
         if(rs != SQLITE_OK && mesgError != nullptr) {
@@ -220,6 +223,9 @@ namespace DBHelper
     sqlite3_stmt* buildUpdateStmt(const QString& tableName, const QStringList& updateCols, const DboRegister* dboRegister,
                                   sqlite3* connection)
     {
+        if(!connection)
+            return nullptr;
+
         QString setClause{""};
         QString whereClause{"id = :id"};
 
@@ -248,7 +254,6 @@ namespace DBHelper
         }
 
         QByteArray query = templateUpdate->arg(tableName, setClause, whereClause).toUtf8();
-        qDebug() << query;
         sqlite3_stmt* stmt = nullptr;
         int rs = sqlite3_prepare_v2(connection, query, query.size(), &stmt, nullptr);
         if(rs != SQLITE_OK) {
@@ -354,12 +359,18 @@ namespace DBHelper
 
     DBCode update(const QString& tableName, const QString& query, sqlite3* connection)
     {
+        if(!connection)
+            return DBCode::Failed;
+
         QString updateQuery = templateUpdate2->arg(tableName, query);
         return DBHelper::execQuery(updateQuery, connection);
     }
 
     DBCode remove(const QString& tableName, const QString& query, sqlite3* connection)
     {
+        if(!connection)
+            return DBCode::Failed;
+
         QString deleteQuery = templateDelete->arg(tableName, query);
         return DBHelper::execQuery(deleteQuery, connection); 
     }
