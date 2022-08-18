@@ -1,6 +1,8 @@
 EasySQLCipher
 =============
 
+**Chú ý:** Những điều trình bày dưới đây là ý tưởng ban đầu và quá trình triển khai bản đầu tiên, nên có thể sẽ khác đôi chút với triển khai hiện tại.  
+
 Chapter 1
 ---------  
 
@@ -479,4 +481,5 @@ auto asyncSelect(const QString& colSelect) const {
     });
 }
 ```
+
 

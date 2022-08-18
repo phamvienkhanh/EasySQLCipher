@@ -14,13 +14,20 @@ public:
         return "Email";
     }
 
-    void registerMember() override;
+    void registerMember() override {
+        AbstractDBO::registerMember();
+
+        bind("sip_id", "text", &m_sip_id);
+        bind("address", "text", &m_address);
+
+        relation("sip_id=sip_id", m_user, getTableName());
+    }
 
 public:
     QString m_address;
     QString m_sip_id;
 
-    User* m_user;
+    std::shared_ptr<User> m_user;
 };
 
 #endif // EMAIL_H

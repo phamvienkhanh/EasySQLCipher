@@ -74,7 +74,6 @@ add_executable(eztest
     tests/dbo/user.h
     tests/dbo/message.h
     tests/dbo/email.h
-    tests/dbo/email.cpp
 )
 
 target_link_libraries(eztest PRIVATE Qt::Test sqlcipher easysqlcipher)
