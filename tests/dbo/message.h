@@ -3,6 +3,8 @@
 
 #include "abstractdbo.h"
 
+class User;
+
 class Message : public AbstractDBO
 {
 public:
@@ -19,6 +21,8 @@ public:
         bind("md5", "BLOB", &m_md5);
         bind("identity", "text", &m_identity);
         bind("author", "text", &m_author);
+
+        relation("author=sip_id", m_user, getTableName());
     }
 
 public:
@@ -26,6 +30,8 @@ public:
     QByteArray  m_md5;
     QString     m_identity;
     QString     m_author;
+
+    std::shared_ptr<User> m_user;
 };
 
 #endif // MESSAGE_H

@@ -205,4 +205,17 @@ testDB.users.query("where #1.id > 7")
     });
 ```
 
-- Cơ chế bất đồng được xây dựng dựa trên QtConcurrent của Qt6.
+Cơ chế bất đồng được xây dựng dựa trên QtConcurrent của Qt6 (tìm hiểu thêm Qt6/QtConcurrent để có thêm thông tin) và tạo một threadpool riêng. Có thể set max thread count thông qua DBInitParam.  
+Để an toàn, cần gọi hàm close của EasySQLCipher phải được gọi trên cùng thread mà nó được khỏi tạo. Các truy vấn đồng bộ cũng phải thực hiện hiện trên cùng thread mà nó được khởi tạo.  
+Không khuyến khích việc truy vấn đồng bộ trên một thread nào khác ngoài threadpool của DBContext. Nên dùng các hàm asyncXXXX để thực hiện truy vấn bất đồng bộ.  
+
+```cpp
+// Không khuyến khích việc này, nhưng lib cũng không chặn việc truy vấn ngoài threadpool. Khi bắt buộc phải thực hiện phương thức truy vấn này thì người dùng phải tự quản lý các vấn đề liên quan đến multithread.
+std::thread t([testDB](){
+    auto result = testDB.users.query("where id = 3")
+                           .select("sip_id, name");
+});
+```
+
+
+

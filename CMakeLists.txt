@@ -78,5 +78,10 @@ add_executable(eztest
 
 target_link_libraries(eztest PRIVATE Qt::Test sqlcipher easysqlcipher)
 add_test(NAME eztest COMMAND eztest)
+add_custom_command(
+        TARGET eztest POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+                ${CMAKE_SOURCE_DIR}/tests/test1.db
+                ${CMAKE_CURRENT_BINARY_DIR}/test1.db)
 
 

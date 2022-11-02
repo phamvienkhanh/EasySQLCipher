@@ -21,6 +21,7 @@ public:
     DbSet<Email>   emails;
 };
 DBContext dbContext;
+DBContext dbContext2;
 
 class TestCase1: public QObject
 {
@@ -36,7 +37,7 @@ private slots:
         QVERIFY(threadSafe == 1);
     }
 
-    void open_db() {
+    void open_db1() {
 
         QFile file("./test.db");
         if(file.exists()) {
@@ -47,6 +48,15 @@ private slots:
         param.dbPath = "./test.db";
         param.openMode = SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE | SQLITE_OPEN_FULLMUTEX;
         auto rs = dbContext.init(param);
+
+        QVERIFY(rs == DBCode::OK);
+    }
+
+    void open_db2() {
+        DBInitParam param;
+        param.dbPath = "../test1.db";
+        param.openMode = SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE | SQLITE_OPEN_FULLMUTEX;
+        auto rs = dbContext2.init(param);
 
         QVERIFY(rs == DBCode::OK);
     }
@@ -221,7 +231,7 @@ private slots:
         QVERIFY(rs == DBCode::OK);
     }
 
-    void remove_data_ascync() {
+    void remove_data_async() {
         User user;
         user.m_id = 3;
         dbContext.users.asyncRemove(user)
@@ -237,9 +247,169 @@ private slots:
         dbContext.close();
     }
 
+    void db2_fetch_sync1() {
+        auto result = dbContext2.users.query("").select("*");
+        QVERIFY(result.retCode == DBCode::OK);
+        QVERIFY(result.value.size() == 4);
+
+        for(int i = 1; i <= 4; i++) {
+            QVERIFY(result.value[i-1].m_id == i);
+            QVERIFY(result.value[i-1].m_sip_id == QString("sip_id_%1").arg(i));
+            QVERIFY(result.value[i-1].m_name == QString("name %1").arg(i));
+            QVERIFY(result.value[i-1].m_data == QString("data %1").arg(i).toUtf8());
+        }
+    }
+
+    void db2_fetch_async1() {
+        dbContext2.users
+            .query("")
+            .asyncSelect("*")
+            .then([](Result<QVector<User>, DBCode> result){
+                QVERIFY(result.retCode == DBCode::OK);
+                QVERIFY(result.value.size() == 4);
+
+                for(int i = 1; i <= 4; i++) {
+                    QVERIFY(result.value[i-1].m_id == i);
+                    QVERIFY(result.value[i-1].m_sip_id == QString("sip_id_%1").arg(i));
+                    QVERIFY(result.value[i-1].m_name == QString("name %1").arg(i));
+                    QVERIFY(result.value[i-1].m_data == QString("data %1").arg(i).toUtf8());
+                }
+            })
+            .onFailed([](const EZException& code){
+                QVERIFY(false);
+            });
+    }
+
+    void db2_fetch_sync2() {
+        auto result = dbContext2.messages.query("").select("*");
+        QVERIFY(result.retCode == DBCode::OK);
+        QVERIFY(result.value.size() == 14);
+
+        int offset = 0;
+        for(int i = 1; i <= 4; i++) {
+            QVERIFY(result.value[i-1+offset].m_id == i+offset);
+            QVERIFY(result.value[i-1+offset].m_body == QString("message_body_1_%1").arg(i));
+            QVERIFY(result.value[i-1+offset].m_md5 == QString("md5_1_%1").arg(i).toUtf8());
+            QVERIFY(result.value[i-1+offset].m_identity == QString("identity_1_%1").arg(i));
+            QVERIFY(result.value[i-1+offset].m_author == QString("sip_id_1"));
+        }
+
+        offset += 4;
+        for(int i = 1; i <= 4; i++) {
+            QVERIFY(result.value[i-1+offset].m_id == i+offset);
+            QVERIFY(result.value[i-1+offset].m_body == QString("message_body_2_%1").arg(i));
+            QVERIFY(result.value[i-1+offset].m_md5 == QString("md5_2_%1").arg(i).toUtf8());
+            QVERIFY(result.value[i-1+offset].m_identity == QString("identity_2_%1").arg(i));
+            QVERIFY(result.value[i-1+offset].m_author == QString("sip_id_2"));
+        }
+
+        offset += 4;
+        for(int i = 1; i <= 6; i++) {
+            QVERIFY(result.value[i-1+offset].m_id == i+offset);
+            QVERIFY(result.value[i-1+offset].m_body == QString("message_body_3_%1").arg(i));
+            QVERIFY(result.value[i-1+offset].m_md5 == QString("md5_3_%1").arg(i).toUtf8());
+            QVERIFY(result.value[i-1+offset].m_identity == QString("identity_3_%1").arg(i));
+            QVERIFY(result.value[i-1+offset].m_author == QString("sip_id_3"));
+        }
+    }
+
+    void db2_fetch_async2() {
+        dbContext2.messages
+            .query("")
+            .asyncSelect("*")
+            .then([](Result<QVector<Message>, DBCode> result){
+                QVERIFY(result.retCode == DBCode::OK);
+                QVERIFY(result.value.size() == 14);
+
+                int offset = 0;
+                for(int i = 1; i <= 4; i++) {
+                    QVERIFY(result.value[i-1+offset].m_id == i+offset);
+                    QVERIFY(result.value[i-1+offset].m_body == QString("message_body_1_%1").arg(i));
+                    QVERIFY(result.value[i-1+offset].m_md5 == QString("md5_1_%1").arg(i).toUtf8());
+                    QVERIFY(result.value[i-1+offset].m_identity == QString("identity_1_%1").arg(i));
+                    QVERIFY(result.value[i-1+offset].m_author == QString("sip_id_1"));
+                }
+
+                offset += 4;
+                for(int i = 1; i <= 4; i++) {
+                    QVERIFY(result.value[i-1+offset].m_id == i+offset);
+                    QVERIFY(result.value[i-1+offset].m_body == QString("message_body_2_%1").arg(i));
+                    QVERIFY(result.value[i-1+offset].m_md5 == QString("md5_2_%1").arg(i).toUtf8());
+                    QVERIFY(result.value[i-1+offset].m_identity == QString("identity_2_%1").arg(i));
+                    QVERIFY(result.value[i-1+offset].m_author == QString("sip_id_2"));
+                }
+
+                offset += 4;
+                for(int i = 1; i <= 6; i++) {
+                    QVERIFY(result.value[i-1+offset].m_id == i+offset);
+                    QVERIFY(result.value[i-1+offset].m_body == QString("message_body_3_%1").arg(i));
+                    QVERIFY(result.value[i-1+offset].m_md5 == QString("md5_3_%1").arg(i).toUtf8());
+                    QVERIFY(result.value[i-1+offset].m_identity == QString("identity_3_%1").arg(i));
+                    QVERIFY(result.value[i-1+offset].m_author == QString("sip_id_3"));
+                }
+            })
+            .onFailed([](const EZException& code){
+                QVERIFY(false);
+            });
+    }
+
+    void fetch_with_relation_sync1() {
+        auto result = dbContext2.messages
+                        .query("")
+                        .with<User>("*")
+                        .select("*");
+
+        QVERIFY(result.retCode == DBCode::OK);
+        QVERIFY(result.value.size() == 14);
+
+        int offset = 0;
+        for(int i = 1; i <= 4; i++) {
+            QVERIFY(result.value[i-1+offset].m_id == i+offset);
+            QVERIFY(result.value[i-1+offset].m_body == QString("message_body_1_%1").arg(i));
+            QVERIFY(result.value[i-1+offset].m_md5 == QString("md5_1_%1").arg(i).toUtf8());
+            QVERIFY(result.value[i-1+offset].m_identity == QString("identity_1_%1").arg(i));
+            QVERIFY(result.value[i-1+offset].m_author == QString("sip_id_1"));
+
+            QVERIFY(result.value[i-1+offset].m_user->m_sip_id == QString("sip_id_1"));
+            QVERIFY(result.value[i-1+offset].m_user->m_name == QString("name 1"));
+            QVERIFY(result.value[i-1+offset].m_user->m_data == QString("data 1"));
+        }
+
+        offset += 4;
+        for(int i = 1; i <= 4; i++) {
+            QVERIFY(result.value[i-1+offset].m_id == i+offset);
+            QVERIFY(result.value[i-1+offset].m_body == QString("message_body_2_%1").arg(i));
+            QVERIFY(result.value[i-1+offset].m_md5 == QString("md5_2_%1").arg(i).toUtf8());
+            QVERIFY(result.value[i-1+offset].m_identity == QString("identity_2_%1").arg(i));
+            QVERIFY(result.value[i-1+offset].m_author == QString("sip_id_2"));
+
+            QVERIFY(result.value[i-1+offset].m_user->m_sip_id == QString("sip_id_2"));
+            QVERIFY(result.value[i-1+offset].m_user->m_name == QString("name 2"));
+            QVERIFY(result.value[i-1+offset].m_user->m_data == QString("data 2"));
+        }
+
+        offset += 4;
+        for(int i = 1; i <= 6; i++) {
+            QVERIFY(result.value[i-1+offset].m_id == i+offset);
+            QVERIFY(result.value[i-1+offset].m_body == QString("message_body_3_%1").arg(i));
+            QVERIFY(result.value[i-1+offset].m_md5 == QString("md5_3_%1").arg(i).toUtf8());
+            QVERIFY(result.value[i-1+offset].m_identity == QString("identity_3_%1").arg(i));
+            QVERIFY(result.value[i-1+offset].m_author == QString("sip_id_3"));
+
+            QVERIFY(result.value[i-1+offset].m_user->m_sip_id == QString("sip_id_3"));
+            QVERIFY(result.value[i-1+offset].m_user->m_name == QString("name 3"));
+            QVERIFY(result.value[i-1+offset].m_user->m_data == QString("data 3"));
+        }
+
+    }
+
+    void close_db2() {
+        dbContext2.close();
+    }
+
     void cleanupTestCase()
     {
-        qDebug("Called after myFirstTest and mySecondTest.");
+
     }
 
 private:
