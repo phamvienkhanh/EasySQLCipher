@@ -20,7 +20,7 @@ DBCode EasySQLCipher::init(const DBInitParam& param)
 void EasySQLCipher::close()
 {
     if(m_workerPool) {
-        m_workerPool->clear();
+//        m_workerPool->clear();
         m_workerPool->waitForDone();
         m_workerPool->deleteLater();
     }

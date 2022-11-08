@@ -105,15 +105,15 @@ int main(int argc, char *argv[])
 //    QVector<User> rsUsers;
 //    DBHelper::ComplexQueryParams cplxParams;
 //    cplxParams.query = "select * from User where id > :id;";
-//    cplxParams.connection = testDB.getConnection();
-//    cplxParams.cbFuncBind = [&](sqlite3_stmt* stmt) -> bool {
+//    cplxParams.dbContext = &testDB;
+//    cplxParams.cbFuncBind = [&](sqlite3_stmt* stmt, void*) -> bool {
 //        if(!DBHelper::stmtBindValue(stmt, 1, 19)) {
 //            return false;
 //        }
 
 //        return true;
 //    };
-//    cplxParams.cbFuncStep = [&](sqlite3_stmt* stmt) -> bool {
+//    cplxParams.cbFuncStep = [&](sqlite3_stmt* stmt, void*) -> bool {
 //        User user;
 //        user.registerMember();
 //        ColumnData idData(0, stmt);
@@ -126,13 +126,13 @@ int main(int argc, char *argv[])
 
 //        return true;
 //    };
-//    cplxParams.cbFuncFinished = [&]() {
+//    cplxParams.cbFuncFinished = [&](void*) {
 //        for(auto& user : rsUsers) {
 //            qDebug() << user.m_id;
 //            qDebug() << user.m_name;
 //        }
 //    };
-//    cplxParams.cbFuncError = [](DBCode code) {
+//    cplxParams.cbFuncError = [](DBCode code, void*) {
 //        qDebug() << "error";
 //    };
 

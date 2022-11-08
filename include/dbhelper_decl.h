@@ -5,6 +5,7 @@
 
 #include "types.h"
 #include "columndata.h"
+#include "easysqlcipher.h"
 
 class DboRegister;
 
@@ -18,11 +19,12 @@ namespace DBHelper
 
     struct ComplexQueryParams {
         QString query;
-        std::function<bool(sqlite3_stmt*)> cbFuncBind;
-        std::function<bool(sqlite3_stmt*)> cbFuncStep;
-        std::function<void(DBCode)> cbFuncError;
-        std::function<void()> cbFuncFinished;
-        sqlite3* connection = nullptr;
+        std::function<bool(sqlite3_stmt*, void*)> cbFuncBind;
+        std::function<bool(sqlite3_stmt*, void*)> cbFuncStep;
+        std::function<void(DBCode, void*)> cbFuncError;
+        std::function<void(void*)> cbFuncFinished;
+        EasySQLCipher* dbContext = nullptr;
+        void* userData = nullptr;
     };
 
     bool stmtBindValue(sqlite3_stmt* stmt, qint32 idx, qint32 value);
@@ -34,6 +36,7 @@ namespace DBHelper
     
     DBCode execQuery(const QString& query, sqlite3* connection);
     void execQuery(const ComplexQueryParams& params);
+    QFuture<void*> asyncExecQuery(const ComplexQueryParams& params);
     bool createTable(const QString& tableName, const DboRegister& dboRegister, sqlite3* connection);
 
     DBCode insert(const QString& tableName, const DboRegister& dboRegister, sqlite3* connection);

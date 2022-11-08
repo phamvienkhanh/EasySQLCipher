@@ -59,7 +59,6 @@ namespace DBHelper
         char* mesgError = nullptr;
         int rs = sqlite3_exec(connection, query.toUtf8(), nullptr, nullptr, &mesgError);
         if(rs != SQLITE_OK && mesgError != nullptr) {
-            qDebug() << mesgError;
             sqlite3_free(mesgError);
         }
         return rs == SQLITE_OK
@@ -377,26 +376,26 @@ namespace DBHelper
 
     void execQuery(const ComplexQueryParams& params)
     {
-        if(params.connection == nullptr) {
+        if(params.dbContext == nullptr || params.dbContext->getConnection() == nullptr) {
             if(params.cbFuncError) {
-                params.cbFuncError(DBCode::Failed);
+                params.cbFuncError(DBCode::Failed, params.userData);
             }
             return;
         }
         QByteArray query = params.query.toUtf8();
 
         sqlite3_stmt* stmt = nullptr;
-        int rs = sqlite3_prepare_v2(params.connection, query, query.size(), &stmt, nullptr);
+        int rs = sqlite3_prepare_v2(params.dbContext->getConnection(), query, query.size(), &stmt, nullptr);
         if(rs != SQLITE_OK) {
             if(params.cbFuncError) {
-                params.cbFuncError(DBCode::PrepareFailed);
+                params.cbFuncError(DBCode::PrepareFailed, params.userData);
             }
             return;
         }
 
         if(params.cbFuncBind) {
-            if(!params.cbFuncBind(stmt)) {
-                params.cbFuncError(DBCode::BindValueFailed);
+            if(!params.cbFuncBind(stmt, params.userData)) {
+                params.cbFuncError(DBCode::BindValueFailed, params.userData);
             }
         }
 
@@ -406,14 +405,14 @@ namespace DBHelper
             switch (rsStep) {
             case SQLITE_ROW: {
                 if(params.cbFuncStep) {
-                    params.cbFuncStep(stmt);
+                    params.cbFuncStep(stmt, params.userData);
                 }
                 break;
             }
             case SQLITE_BUSY:
                 sqlite3_finalize(stmt);
                 if(params.cbFuncError) {
-                    params.cbFuncError(DBCode::Busy);
+                    params.cbFuncError(DBCode::Busy, params.userData);
                 }
                 return;
 
@@ -422,7 +421,7 @@ namespace DBHelper
             case SQLITE_ERROR:
                 sqlite3_finalize(stmt);
                 if(params.cbFuncError) {
-                    params.cbFuncError(DBCode::Unknown);
+                    params.cbFuncError(DBCode::Unknown, params.userData);
                 }
                 return;
 
@@ -431,11 +430,78 @@ namespace DBHelper
                 sqlite3_finalize(stmt);
 
                 if(params.cbFuncFinished) {
-                    params.cbFuncFinished();
+                    params.cbFuncFinished(params.userData);
                 }
                 return;
             }
         }
     }
     
+    QFuture<void*> asyncExecQuery(const ComplexQueryParams& params)
+    {
+        return QtConcurrent::run(params.dbContext->getWorkerPool(), [params] () {
+            if(params.dbContext == nullptr || params.dbContext->getConnection() == nullptr) {
+                if(params.cbFuncError) {
+                    params.cbFuncError(DBCode::Failed, params.userData);
+                }
+                throw EZException(DBCode::Failed);
+            }
+
+            QByteArray query = params.query.toUtf8();
+
+            sqlite3_stmt* stmt = nullptr;
+            int rs = sqlite3_prepare_v2(params.dbContext->getConnection(), query, query.size(), &stmt, nullptr);
+            if(rs != SQLITE_OK) {
+                if(params.cbFuncError) {
+                    params.cbFuncError(DBCode::PrepareFailed, params.userData);
+                }
+                throw EZException(DBCode::PrepareFailed);
+            }
+
+            if(params.cbFuncBind) {
+                if(!params.cbFuncBind(stmt, params.userData)) {
+                    if(params.cbFuncError) {
+                        params.cbFuncError(DBCode::BindValueFailed, params.userData);
+                    }
+                    throw EZException(DBCode::BindValueFailed);
+                }
+            }
+
+            int rsStep = 0;
+            while (1) {
+                rsStep = sqlite3_step(stmt);
+                switch (rsStep) {
+                case SQLITE_ROW: {
+                    if(params.cbFuncStep) {
+                        params.cbFuncStep(stmt, params.userData);
+                    }
+                    break;
+                }
+                case SQLITE_BUSY:
+                    sqlite3_finalize(stmt);
+                    if(params.cbFuncError) {
+                        params.cbFuncError(DBCode::Busy, params.userData);
+                    }
+                    throw EZException(DBCode::Busy);
+
+                case SQLITE_MISUSE:
+                case SQLITE_CONSTRAINT:
+                case SQLITE_ERROR:
+                    sqlite3_finalize(stmt);
+                    if(params.cbFuncError) {
+                        params.cbFuncError(DBCode::Unknown, params.userData);
+                    }
+                    throw EZException(DBCode::Unknown);
+
+                case SQLITE_DONE:
+                default:
+                    sqlite3_finalize(stmt);
+                    if(params.cbFuncFinished) {
+                        params.cbFuncFinished(params.userData);
+                    }
+                    return params.userData;
+                }
+            }
+        });
+    }
 }

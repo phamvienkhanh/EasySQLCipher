@@ -518,6 +518,119 @@ private slots:
             });
     }
 
+    void fetch_complex_sync() {
+        DBHelper::ComplexQueryParams cplxParams;
+        cplxParams.userData = new QVector<User>;
+        cplxParams.query = "select * from User where id = :id;";
+        cplxParams.dbContext = &dbContext2;
+        cplxParams.cbFuncBind = [&](sqlite3_stmt* stmt, void*) -> bool {
+            if(!DBHelper::stmtBindValue(stmt, 1, 3)) {
+                return false;
+            }
+
+            return true;
+        };
+        cplxParams.cbFuncStep = [&](sqlite3_stmt* stmt, void* userData) -> bool {
+            ColumnData id(0, stmt);
+            ColumnData sipid(1, stmt);
+            ColumnData name(2, stmt);
+            ColumnData data(3, stmt);
+
+            User user;
+            user.m_id = id;
+            user.m_sip_id = (QString)sipid;
+            user.m_name = (QString)name;
+            user.m_data = data;
+
+            if(!QTest::qVerify(static_cast<bool>(user.m_id == 3), "user.m_id == 3", "", __FILE__, __LINE__))
+                return false;
+            if(!QTest::qVerify(static_cast<bool>(user.m_sip_id == "sip_id_3"), "user.m_sip_id == 'sip_id_3'", "", __FILE__, __LINE__))
+                return false;
+            if(!QTest::qVerify(static_cast<bool>(user.m_name == "name 3"), "user.m_name == 'name 3'", "", __FILE__, __LINE__))
+                return false;
+            if(!QTest::qVerify(static_cast<bool>(user.m_data == "data 3"), "user.m_data == 'data 3'", "", __FILE__, __LINE__))
+                return false;
+
+            if(userData) {
+                ((QVector<User>*)userData)->push_back(user);
+            }
+
+            return true;
+        };
+        cplxParams.cbFuncFinished = [&](void* userData) {
+            if(userData) {
+                auto sz = ((QVector<User>*)userData)->size();
+                QVERIFY(sz == 1);
+            }
+        };
+        cplxParams.cbFuncError = [](DBCode code, void*) {
+            QVERIFY(false);
+        };
+
+        DBHelper::execQuery(cplxParams);
+    }
+
+    void fetch_complex_async() {
+        DBHelper::ComplexQueryParams cplxParams;
+        cplxParams.userData = new QVector<User>;
+        cplxParams.query = "select * from User where id = :id;";
+        cplxParams.dbContext = &dbContext2;
+        cplxParams.cbFuncBind = [&](sqlite3_stmt* stmt, void*) -> bool {
+            if(!DBHelper::stmtBindValue(stmt, 1, 3)) {
+                return false;
+            }
+
+            return true;
+        };
+        cplxParams.cbFuncStep = [&](sqlite3_stmt* stmt, void* userData) -> bool {
+            ColumnData id(0, stmt);
+            ColumnData sipid(1, stmt);
+            ColumnData name(2, stmt);
+            ColumnData data(3, stmt);
+
+            User user;
+            user.m_id = id;
+            user.m_sip_id = (QString)sipid;
+            user.m_name = (QString)name;
+            user.m_data = data;
+
+            if(!QTest::qVerify(static_cast<bool>(user.m_id == 3), "user.m_id == 3", "", __FILE__, __LINE__))
+                return false;
+            if(!QTest::qVerify(static_cast<bool>(user.m_sip_id == "sip_id_3"), "user.m_sip_id == 'sip_id_3'", "", __FILE__, __LINE__))
+                return false;
+            if(!QTest::qVerify(static_cast<bool>(user.m_name == "name 3"), "user.m_name == 'name 3'", "", __FILE__, __LINE__))
+                return false;
+            if(!QTest::qVerify(static_cast<bool>(user.m_data == "data 3"), "user.m_data == 'data 3'", "", __FILE__, __LINE__))
+                return false;
+
+            if(userData) {
+                ((QVector<User>*)userData)->push_back(user);
+            }
+
+            return true;
+        };
+        cplxParams.cbFuncFinished = [&](void* userData) {
+            if(userData) {
+                auto sz = ((QVector<User>*)userData)->size();
+                QVERIFY(sz == 1);
+            }
+        };
+        cplxParams.cbFuncError = [](DBCode code, void*) {
+            QVERIFY(false);
+        };
+
+        DBHelper::asyncExecQuery(cplxParams)
+            .then([](void* userData){
+                if(userData) {
+                    auto sz = ((QVector<User>*)userData)->size();
+                    QVERIFY(sz == 1);
+                }
+            })
+            .onFailed(this, [](const EZException& e){
+                QVERIFY(false);
+            });
+    }
+
     void close_db2() {
         dbContext2.close();
     }
