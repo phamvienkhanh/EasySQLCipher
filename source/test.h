@@ -48,8 +48,8 @@ public:
         bind("name", "text", &m_name);
         bind("data", "BLOB", &m_data);
         
-        relation("sip_id=author", &m_messages, getTableName());
-        relation("sip_id=sip_id", &m_emails, getTableName());
+        relation("sip_id=author", &m_messages);
+        relation("sip_id=sip_id", &m_emails);
     }
 
 public:
@@ -82,7 +82,7 @@ public:
         bind("sip_id", "text", &m_sip_id);
         bind("address", "text", &m_address);
         
-        relation("sip_id=sip_id", m_user, getTableName());
+        relation("sip_id=sip_id", m_user);
     }
 
 public:

@@ -22,7 +22,7 @@ public:
         bind("identity", "text", &m_identity);
         bind("author", "text", &m_author);
 
-        relation("author=sip_id", m_user, getTableName());
+        relation("author=sip_id", m_user);
     }
 
 public:
