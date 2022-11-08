@@ -62,17 +62,13 @@ public:
 Tạo DBContext
 
 ```cpp
-class TestDB : public EasySQLCipher
+class DBContext : public EasySQLCipher
 {
 public:
-    TestDB() {
-        auto getConnection = [this](){
-            return m_connection;
-        };
-
-        users.setFnConProvider(getConnection);
-        messages.setFnConProvider(getConnection);
-        emails.setFnConProvider(getConnection);
+    DBContext() {
+        users.setDbContext(this);
+        messages.setDbContext(this);
+        emails.setDbContext(this);
     }
 
     DbSet<User>    users;
@@ -83,20 +79,20 @@ public:
 
 - DBContext là class kế thừa từ EasySQLCipher, nó có nhiệm vụ khởi tạo và giữ connection. Cung cấp DbSet để thực hiện truy vấn.
 - DbSet là các template tạo ra từ DBO, cũng cấp phương thức truy vấn cho các DBO.
-- Cần phải gọi hàm setFnConProvider trên từng DbSet để set callback connection provider. DbSet sẽ gọi hàm này để lấy connnection khi cần.
+- Cần phải gọi hàm setDbContext trên từng DbSet để phục vụ cho truy vấn trên DbSet. 
 
 Sử dụng DBContext đã tạo
 
 ```cpp
-TestDB testDB;
 DBInitParam param;
 param.dbPath = "./test.db";
 param.openMode = SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE | SQLITE_OPEN_FULLMUTEX;
-qDebug() << (qint32)testDB.init(param);
+auto rs = dbContext.init(param);
 
-testDB.users.createTable();
-testDB.messages.createTable();
-testDB.emails.createTable();
+bool rs = false;
+rs = dbContext.users.createTable();
+rs = dbContext.emails.createTable();
+rs = dbContext.messages.createTable();
 ```
 
 Insert dữ liệu:  
@@ -108,7 +104,7 @@ user.m_data = QByteArray::fromRawData("testData", 8);
 user.m_name = "my_name";
 user.m_sip_id = "my_sip_id";
 
-testDB.users.insert(user);
+dbContext.users.insert(user);
 
 // hoặc insert danh sách dbo
 QVector<User> listUser;
@@ -122,7 +118,7 @@ for(auto i = 0; i < 20; i++) {
     listUser.push_back(user);
 }
 
-testDB.users.insert(listUser);
+dbContext.users.insert(listUser);
 ```
 
 Update dữ liệu
@@ -133,7 +129,7 @@ user.m_id = 0;
 user.m_name = "kakakak";
 user.m_data = "daaaaaa";
 
-testDB.users.update(user, {"name", "data"});
+dbContext.users.update(user, {"name", "data"});
 ```
 
 - Tương tự với insert, cũng có thể update danh sách dbo.
@@ -143,7 +139,7 @@ Truy vấn dữ liệu
 ```cpp
 
 // truy vấn trên 1 bảng
-auto result = testDB.users.query("where id = 3")
+auto result = dbContext.users.query("where id = 3")
                            .select("sip_id, name");
 
 if(result.retCode == DBCode::OK) {
@@ -154,7 +150,7 @@ if(result.retCode == DBCode::OK) {
 }
 
 // truy vấn trên nhiều bảng
-auto result = testDB.users
+auto result = dbContext.users
                 .query("where #1.id > 1")
                 .with<Message>("body")
                 .with<Email>("address")
@@ -167,7 +163,7 @@ Xoá dữ liệu
 ```cpp
 User user;
 user.m_id = 0;
-testDB.users.remove(user);
+dbContext.users.remove(user);
 ```
 
 Các thao tác xoá và update đều dựa trên id của dbo.  
@@ -176,7 +172,7 @@ Các thao tác xoá và update đều dựa trên id của dbo.
 Truy vấn bất đồng bộ
 
 ```cpp
-testDB.users.asyncInsert(user)
+dbContext.users.asyncInsert(user)
     .then(&app, [](const User& users){
         qDebug() << "ok";
         qDebug() << users.m_id;
@@ -185,7 +181,7 @@ testDB.users.asyncInsert(user)
         qDebug() << "error : " << (int)e.code();
     });
 
-testDB.users
+dbContext.users
     .asyncUpdate("set sip_id = 'blalalalal' where id > 23;")
     .then(&app, [] () {
         qDebug() << "code : ";
@@ -194,7 +190,7 @@ testDB.users
         qDebug() << (int)e.code();
     });
 
-testDB.users.query("where #1.id > 7")
+dbContext.users.query("where #1.id > 7")
     .with<Email>("*")
     .asyncSelect("*")
     .then([](Result<QVector<User>, DBCode> result){
@@ -211,8 +207,8 @@ Không khuyến khích việc truy vấn đồng bộ trên một thread nào kh
 
 ```cpp
 // Không khuyến khích việc này, nhưng lib cũng không chặn việc truy vấn ngoài threadpool. Khi bắt buộc phải thực hiện phương thức truy vấn này thì người dùng phải tự quản lý các vấn đề liên quan đến multithread.
-std::thread t([testDB](){
-    auto result = testDB.users.query("where id = 3")
+std::thread t([dbContext](){
+    auto result = dbContext.users.query("where id = 3")
                            .select("sip_id, name");
 });
 ```
