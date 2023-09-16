@@ -54,7 +54,7 @@ private slots:
 
     void open_db2() {
         DBInitParam param;
-        param.dbPath = "../test1.db";
+        param.dbPath = "./test1.db";
         param.openMode = SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE | SQLITE_OPEN_FULLMUTEX;
         auto rs = dbContext2.init(param);
 
